@@ -26,7 +26,10 @@ Languages: Čeština (default) · Slovenčina · Polski · Română · English
 | The problem | etcd quorum simulator: pick a topology (2+1, 1+1+1, 2+2, 3+2, two clusters), fail a site or cut the DC1–DC2 link, and see what happens to the API, workloads and recovery. Plus HA vs. DR, "DR is two problems", the disposable cluster principle and blast radius. |
 | Options | Seven architecture options A–G with details, an RPO/RTO map and a side-by-side table. |
 | Configurator | Six inputs (where stateful data live, required RPO, third site, latency between DCs, platform, single-cluster requirement) produce a recommended option, what to combine it with, warnings and prerequisites. |
-| Data & storage, Traffic, Management, Virtualization | ODF stretch / Metro-DR / Regional-DR, storage arrays, application replication, backups; GSLB and Connectivity Link; ACM hub resilience and GitOps; OpenShift Virtualization specifics. |
+| Data & storage | Replication pattern switch (ODF stretch, Metro-DR, Regional-DR, storage array, application replication, OADP) that redraws where storage sits, how data flow and whether a third site is needed, with RPO, latency and subscription for each. |
+| Traffic | Request-flow animation: take DC1 down and watch health checks, DNS TTL and the resulting RTO; east-west connectivity options; platform-dependency check for DC2. |
+| Management | Six-step ACM hub failover storyboard (label-driven active/standby/failover), who can trigger DR failover at each step, hub placement options. |
+| Virtualization | VM restart timeline with adjustable timers and a fencing toggle, VMware vMSC vs. OpenShift 1+1+1 comparison, restart-storm capacity calculator. |
 | Discovery | Checklist of questions for the customer (state is kept in the browser). |
 | Sources | Links to the documentation and articles the content is based on. |
 
@@ -79,5 +82,3 @@ python3 -m http.server 8080
 ```
 
 Fonts load from Google Fonts; without internet the app falls back to system fonts. The selected language, configurator answers and checklist state are stored in the browser's `localStorage` only.
-
-

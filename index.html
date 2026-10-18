@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Interactive guide (CS/SK/PL/RO/EN) to running Red Hat OpenShift with high availability across two data centers. As of 18 October 2026.">
 <meta property="og:title" content="OpenShift Two-DC Explorer">
-<meta property="og:description" content="etcd quorum simulator, architecture options A–G, configurator and discovery checklist for OpenShift across two data centers.">
+<meta property="og:description" content="etcd quorum simulator, architecture options A–G, configurator, storage/traffic/hub/VM visuals and discovery checklist for OpenShift across two data centers.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b3271d'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='14' text-anchor='middle' fill='white'%3E2DC%3C/text%3E%3C/svg%3E">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>OpenShift Two-DC Explorer</title>
@@ -49,10 +49,10 @@ section{scroll-margin-top:84px;display:grid;gap:18px}
 .kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
 .lead{color:var(--muted);max-width:68ch;font-size:1.02rem}
 .hero{display:grid;gap:10px;padding-block:8px 4px}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.cell{background:var(--surface2);border-radius:10px;padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
+.cell{background:var(--surface2);border-radius:10px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-content:start;min-width:0}
 .cell ul{margin:0;padding-left:18px;display:grid;gap:4px}
 .pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.72rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .pill.good{background:var(--good-soft);color:var(--good);border-color:transparent}
@@ -99,11 +99,12 @@ select{background:var(--surface2);color:var(--fg);border:1px solid var(--line);b
 .verdict.info{border-color:var(--info)}
 /* variants */
 .vcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.vcard{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;cursor:pointer;background:var(--surface);align-content:start}
+.vcard{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:8px;cursor:pointer;background:var(--surface);align-content:start}
 .vcard:hover{border-color:var(--muted)}
 .vcard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .vcard .id{font-family:var(--display);font-weight:800;font-size:1.4rem;line-height:1;color:var(--accent)}
 .vcard small{color:var(--muted);font-size:.8rem}
+.vcard .pill,.vdetail .pill,td .pill{white-space:normal;text-align:left}
 .detail{display:grid;gap:12px}
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .kv div{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:.85rem;display:grid;gap:2px}
@@ -148,6 +149,54 @@ svg.map .grid{stroke:var(--line);stroke-width:1}
 .progress{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
 .src{display:grid;gap:6px;margin:0;padding-left:18px;font-size:.88rem}
 footer{color:var(--muted);font-size:.78rem;padding-block:20px;border-top:1px solid var(--line)}
+
+/* visuals */
+.vizwrap{overflow-x:auto;min-width:0}
+svg.viz{width:100%;height:auto;display:block;min-width:520px}
+svg.viz .vt{font-family:var(--body);font-size:13px;fill:var(--fg)}
+svg.viz .vt.h{font-weight:600;font-size:13px}
+svg.viz .vt.s{font-size:11px;fill:var(--muted)}
+svg.viz .vt.on{fill:var(--bg);font-weight:600}
+svg.viz .vt.tot{fill:var(--fg);font-weight:600}
+svg.viz .vt.ax{fill:var(--muted);font-family:var(--mono);font-size:10px}
+svg.viz .vt.mono{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+svg.viz .vt.crit{fill:var(--crit);font-weight:600}
+svg.viz .vt.chipt{fill:var(--bg);font-weight:600;font-size:10.5px}
+svg.viz .vb{fill:var(--surface);stroke:var(--line);stroke-width:1.25}
+svg.viz .vb.zone{fill:var(--surface2);stroke:var(--line);stroke-width:1.5}
+svg.viz .vb.zone.dashed{stroke-dasharray:5 4;fill:none}
+svg.viz .vb.zone.down{stroke:var(--crit);fill:var(--crit-soft)}
+svg.viz .vb.zone.warn{stroke:var(--warn);fill:var(--warn-soft)}
+svg.viz .vb.nd{fill:var(--surface);stroke:var(--line)}
+svg.viz .vb.nd.dead{opacity:.4}
+svg.viz .vl{fill:none;stroke:var(--muted);stroke-width:1.5}
+svg.viz .vl.acc{stroke:var(--info);stroke-width:2}
+svg.viz .vl.crit{stroke:var(--crit);stroke-width:2;stroke-dasharray:3 3}
+svg.viz .vl.dashed{stroke-dasharray:6 4}
+svg.viz .vl.dotted{stroke-dasharray:2 4}
+svg.viz .vl.dim{stroke:var(--line);stroke-width:1.25}
+svg.viz .mk{fill:var(--muted)} svg.viz .mkA{fill:var(--info)}
+svg.viz .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+svg.viz .chip-active{fill:var(--good)} svg.viz .chip-standby{fill:var(--muted)} svg.viz .chip-failover{fill:var(--warn)} svg.viz .chip-down{fill:var(--crit)}
+.seg-c1{fill:var(--info)} .seg-c2{fill:var(--warn)} .seg-c3{fill:var(--good)} .seg-c4{fill:var(--crit)} .seg-c5{fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.legend i.seg-c1{background:var(--info)} .legend i.seg-c2{background:var(--warn)} .legend i.seg-c3{background:var(--good)} .legend i.seg-c4{background:var(--crit)} .legend i.seg-c5{background:var(--muted)}
+.seg.wrap-seg{flex-wrap:wrap}
+.seg.wrap-seg button{border-left:0;border-top:1px solid var(--line)}
+.steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.88rem;align-content:start}
+.steps li{color:var(--muted)} .steps li.done{color:var(--fg);opacity:.6} .steps li.cur{color:var(--fg);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{font:inherit;font-size:.8rem;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;background:var(--good-soft);color:var(--good)}
+.chip.off{background:var(--crit-soft);color:var(--crit);text-decoration:line-through}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.88rem}
+.cmp>div{background:var(--surface2);border-radius:8px;padding:8px 10px}
+.cmp .cmph{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:transparent;padding-bottom:0}
+.cmp .acc{border-left:3px solid var(--accent)}
+.bar{height:10px;border-radius:5px;background:var(--crit-soft);overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--good)}
+.btn:disabled{opacity:.4;cursor:default}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -210,10 +259,10 @@ footer{color:var(--muted);font-size:.78rem;padding-block:20px;border-top:1px sol
     </div>
   </section>
 
-  <section id="data"><div><div class="kicker" data-i18n="nav.data"></div><h2 data-i18n="data.title"></h2></div><p class="lead" data-i18n="data.lead"></p><div class="grid3" id="dataItems"></div></section>
-  <section id="traffic"><div><div class="kicker" data-i18n="nav.traffic"></div><h2 data-i18n="traffic.title"></h2></div><p class="lead" data-i18n="traffic.lead"></p><div class="grid3" id="trafficItems"></div></section>
-  <section id="mgmt"><div><div class="kicker" data-i18n="nav.mgmt"></div><h2 data-i18n="mgmt.title"></h2></div><p class="lead" data-i18n="mgmt.lead"></p><div class="grid3" id="mgmtItems"></div></section>
-  <section id="virt"><div><div class="kicker" data-i18n="nav.virt"></div><h2 data-i18n="virt.title"></h2></div><p class="lead" data-i18n="virt.lead"></p><div class="grid3" id="virtItems"></div></section>
+  <section id="data"><div><div class="kicker" data-i18n="nav.data"></div><h2 data-i18n="data.title"></h2></div><p class="lead" data-i18n="data.lead"></p><div class="panel" id="vizStorage"></div><div class="grid3" id="dataItems"></div></section>
+  <section id="traffic"><div><div class="kicker" data-i18n="nav.traffic"></div><h2 data-i18n="traffic.title"></h2></div><p class="lead" data-i18n="traffic.lead"></p><div class="panel" id="vizTraffic"></div><div class="grid3" id="trafficItems"></div></section>
+  <section id="mgmt"><div><div class="kicker" data-i18n="nav.mgmt"></div><h2 data-i18n="mgmt.title"></h2></div><p class="lead" data-i18n="mgmt.lead"></p><div class="panel" id="vizMgmt"></div><div class="grid3" id="mgmtItems"></div></section>
+  <section id="virt"><div><div class="kicker" data-i18n="nav.virt"></div><h2 data-i18n="virt.title"></h2></div><p class="lead" data-i18n="virt.lead"></p><div class="panel" id="vizVirt"></div><div class="grid3" id="virtItems"></div></section>
 
   <section id="discovery">
     <div><div class="kicker" data-i18n="nav.discovery"></div><h2 data-i18n="discovery.title"></h2></div>
@@ -886,6 +935,206 @@ discovery:{title:"Întrebări pentru client",lead:"Aceste răspunsuri decid înt
  progress:"{done} din {total} răspunse"},
 sources:{title:"Surse",lead:"Documentația Red Hat și blogurile pe care se bazează ghidul.",groups:{docs:"Documentație Red Hat",blogs:"Bloguri și articole Red Hat",other:"Prezentări și altele"}}
 };
+I18N.en.viz = {
+ storage:{title:"Where the data live and how they replicate",lead:"Switch the replication pattern. The picture shows where storage sits, which way data flow and whether a third site is needed; the row below gives RPO, latency limit and subscriptions.",
+  modes:{odfstretch:"ODF stretch cluster",metro:"ODF Metro-DR",regional:"ODF Regional-DR",array:"Storage array (CSI)",app:"Application replication",oadp:"OADP backup"},
+  labels:{cluster:"OpenShift cluster",stretched:"OpenShift cluster (stretched 1+1+1)",odfZone:"ODF data zone",rhcs:"Red Hat Ceph Storage stretch cluster (external)",odf:"ODF cluster",array:"Storage array",db:"DB / Kafka inside the app",s3:"S3 object storage",arbiter:"ODF arbiter zone + control plane node",cephArb:"Ceph monitor arbiter (~100 ms)",witness:"Array witness / mediator",notNeeded:"not needed",consensus:"3 sites only for consensus DBs",sync:"synchronous",async:"asynchronous, interval ≥ 1 min",backup:"scheduled backup",restore:"restore on demand",appRepl:"replication by the application",vendor:"sync or async, per vendor",site3:"Third site"},
+  metrics:{rpo:"RPO",lat:"Latency DC–DC",site3:"Third site",subs:"Subscriptions"},
+  m:{odfstretch:{rpo:"0",lat:"< 10 ms",site3:"Yes: arbiter zone + control plane node",subs:"ODF Advanced"},
+     metro:{rpo:"0",lat:"< 10 ms",site3:"Yes: Ceph arbiter up to ~100 ms",subs:"ODF Advanced + ACM"},
+     regional:{rpo:"≥ 1 min + change rate",lat:"no limit",site3:"No",subs:"ODF Advanced + ACM"},
+     array:{rpo:"0 (sync) or > 0 (async)",lat:"per vendor, sync ≤ ~5–10 ms",site3:"Sync: witness needed",subs:"Vendor + CSI driver; ACM optional"},
+     app:{rpo:"per application, often ~0",lat:"per application",site3:"Only for consensus databases",subs:"Application / middleware"},
+     oadp:{rpo:"backup frequency",lat:"no limit",site3:"No",subs:"OADP is part of OpenShift"}}},
+ traffic:{title:"Follow a request through the failover",lead:"Take DC1 down and watch what decides the RTO: three failed health checks plus the DNS TTL. OpenShift itself is not on that path.",
+  labels:{client:"Client",gslb:"GSLB / DNS",ingress1:"Ingress DC1",ingress2:"Ingress DC2",pods:"Application pods",ew:"east-west"},
+  fail:"Take DC1 down",restore:"Bring DC1 back",hc:"Health check interval",ttl:"DNS TTL",rto:"Estimated RTO",rtoNote:"3 failed checks + TTL; resolver caches can add more",
+  steps:["Healthy: GSLB answers with DC1, requests served in DC1","DC1 down: clients still resolve to DC1 and get errors","Third health check fails: GSLB marks DC1 down","Cached DNS answers expire (TTL)","Clients resolve to DC2: service restored"],
+  ewTitle:"East-west connectivity between clusters",ewModes:{none:"None (via GSLB only)",submariner:"Submariner (L3, part of ACM)",skupper:"Service Interconnect (application layer)",mesh:"Service Mesh 3 federation"},
+  ewDesc:{none:"Each cluster is an island; cross-cluster calls go out through the global load balancer.",submariner:"Flat pod and service network across clusters; used by ODF Regional-DR and distributed databases.",skupper:"Virtual application network over mTLS; no shared L3, services are exposed by name.",mesh:"Multi-primary federation, local instance preferred, east-west gateway for the remote one."},
+  deps:{title:"Platform dependencies available in DC2",items:["DNS","NTP","IdP (AD/LDAP)","Image registry","Git","Vault","S3 for backups"],ok:"DC2 can start the applications.",missing:"DC2 cannot start the applications: missing {x}."}},
+ mgmt:{title:"ACM hub failover, step by step",lead:"The storyboard from the ACM DR runbook: two hubs, one label in Git. Step through an outage and see who can still trigger application failover.",
+  next:"Next",prev:"Back",step:"Step {n} of 6",
+  steps:[{t:"Normal operation",d:"Hub 1 is active: it manages the workload clusters and backs up to the S3 bucket beside Hub 2. Hub 2 is standby and keeps restoring passive data from its local bucket."},
+         {t:"Hub 2 fails",d:"Nothing changes for the workloads. Backups continue; the standby is rebuilt later from Git and the bucket."},
+         {t:"Hub 1 fails",d:"Workload clusters keep running, but nobody can trigger ODF DR failover or push policies. This is the gap a passive hub exists for."},
+         {t:"Label in Git set to failover",d:"Policy switches Hub 2 to failover: it keeps its connection to the local bucket and restores everything, including activation data."},
+         {t:"Hub 2 becomes active",d:"Label set to active: Hub 2 enables its backup schedule and writes to the remote bucket beside Hub 1. Managed clusters reconnect (automatically from ACM 2.7)."},
+         {t:"Hub 1 returns as standby",d:"Rebuilt Hub 1 restores passive data from its local bucket and waits. Roles are swapped; nothing else changes."}],
+  status:{backup:"Who backs up",trigger:"Who can trigger DR failover",risk:"At risk"},
+  vals:{backup:["Hub 1 → S3 at DC2","Hub 1 → S3 at DC2","nobody","nobody","Hub 2 → S3 at DC1","Hub 2 → S3 at DC1"],
+        trigger:["Hub 1","Hub 1","nobody","Hub 2, after the restore","Hub 2","Hub 2"],
+        risk:["none","standby is cold until rebuilt","no DR failover; changes since last backup","window since the last backup","none","none"]},
+  labels:{hub1:"Hub 1 (DC1)",hub2:"Hub 2 (DC2)",s3:"S3 bucket",clusters:"Workload clusters",active:"active",standby:"standby",failover:"failover",down:"down",backup:"backup",restore:"restore"},
+  placement:{title:"Where to put the active hub",opts:{primary:"Beside the primary cluster",secondary:"Beside the secondary cluster",neutral:"Neutral third site"},
+   impact:{primary:"Losing the primary DC takes the hub with it: step 3 is a real scenario and the passive hub is mandatory.",secondary:"Losing the secondary DC leaves the hub alive; losing the primary needs the passive hub as in step 3.",neutral:"The hub survives either DC. Failover can be triggered at once; hub recovery for Metro-DR is still Technology Preview in ODF 4.18."}}},
+ virt:{title:"How long a VM takes to come back",lead:"A VM runs as one instance, so its RTO is the sum of detection, toleration, fencing and start. Adjust the timers; the default row is what you get out of the box.",
+  tl:{rows:{def:"Defaults",yours:"Your settings"},phases:{detect:"Node detection",tolerate:"Pod toleration",fence:"Fencing (FAR)",graceful:"Graceful deletion timeout",start:"VM start + boot"},
+      stuck:"Without fencing the volume stays attached: the VM is not restarted safely",sliders:{detect:"Node monitor grace period",tolerate:"Toleration (not-ready / unreachable)",fencing:"Fencing: Node Health Check + Fence Agents Remediation"},total:"Time to restart",sec:"s",min:"min"},
+  vmsc:{title:"Same skeleton as the VMware setup",left:"vSphere Metro Storage Cluster",right:"OpenShift stretched 1+1+1",
+   rows:[["vSphere HA cluster across two sites","One cluster, one control plane node per site"],["vSAN stretched / metro storage array","ODF stretch cluster / metro array"],["Witness appliance at a third site","Control plane node + storage arbiter at a third site"],["vSphere HA restarts VMs","Fencing + scheduler restart VMs"]]},
+  storm:{title:"Restart storm and capacity",vms:"VMs in the failed DC",cap:"Free capacity in the surviving DC",fit:"{n} VMs restart, {m} wait for capacity",ok:"All VMs fit; throttle the restart order anyway.",over:"Capacity exceeded: {m} VMs cannot start until capacity is freed."}}
+};
+I18N.cs.viz = {
+ storage:{title:"Kde data leží a jak se replikují",lead:"Přepněte replikační vzor. Obrázek ukáže, kde sedí storage, kterým směrem data tečou a zda je potřeba třetí lokalita; řádek pod ním dá RPO, limit latence a subskripce.",
+  modes:{odfstretch:"ODF stretch cluster",metro:"ODF Metro-DR",regional:"ODF Regional-DR",array:"Storage pole (CSI)",app:"Replikace v aplikaci",oadp:"OADP záloha"},
+  labels:{cluster:"OpenShift cluster",stretched:"OpenShift cluster (stretched 1+1+1)",odfZone:"ODF datová zóna",rhcs:"Red Hat Ceph Storage stretch cluster (externí)",odf:"ODF cluster",array:"Storage pole",db:"DB / Kafka uvnitř aplikace",s3:"S3 objektové úložiště",arbiter:"ODF arbiter zóna + control plane node",cephArb:"Ceph monitor arbiter (~100 ms)",witness:"Witness / mediator pole",notNeeded:"není potřeba",consensus:"3 lokality jen pro konsenzuální DB",sync:"synchronní",async:"asynchronní, interval ≥ 1 min",backup:"plánovaná záloha",restore:"obnova na vyžádání",appRepl:"replikaci řídí aplikace",vendor:"sync nebo async, podle dodavatele",site3:"Třetí lokalita"},
+  metrics:{rpo:"RPO",lat:"Latence DC–DC",site3:"Třetí lokalita",subs:"Subskripce"},
+  m:{odfstretch:{rpo:"0",lat:"< 10 ms",site3:"Ano: arbiter zóna + control plane node",subs:"ODF Advanced"},
+     metro:{rpo:"0",lat:"< 10 ms",site3:"Ano: Ceph arbiter až ~100 ms",subs:"ODF Advanced + ACM"},
+     regional:{rpo:"≥ 1 min + change rate",lat:"bez limitu",site3:"Ne",subs:"ODF Advanced + ACM"},
+     array:{rpo:"0 (sync) nebo > 0 (async)",lat:"podle dodavatele, sync ≤ ~5–10 ms",site3:"Sync: witness nutný",subs:"Dodavatel + CSI driver; ACM volitelně"},
+     app:{rpo:"podle aplikace, často ~0",lat:"podle aplikace",site3:"Jen pro konsenzuální databáze",subs:"Aplikace / middleware"},
+     oadp:{rpo:"frekvence záloh",lat:"bez limitu",site3:"Ne",subs:"OADP je součást OpenShiftu"}}},
+ traffic:{title:"Sledujte request při failoveru",lead:"Vyřaďte DC1 a sledujte, co rozhoduje o RTO: tři neúspěšné health checky plus DNS TTL. OpenShift sám na této cestě není.",
+  labels:{client:"Klient",gslb:"GSLB / DNS",ingress1:"Ingress DC1",ingress2:"Ingress DC2",pods:"Aplikační pody",ew:"east-west"},
+  fail:"Vyřadit DC1",restore:"Vrátit DC1",hc:"Interval health checku",ttl:"DNS TTL",rto:"Odhad RTO",rtoNote:"3 neúspěšné checky + TTL; cache resolverů může přidat víc",
+  steps:["V pořádku: GSLB odpovídá DC1, requesty obsluhuje DC1","DC1 mimo provoz: klienti stále resolvují DC1 a dostávají chyby","Třetí health check selhal: GSLB označí DC1 jako down","Nacachované DNS odpovědi vyprší (TTL)","Klienti resolvují DC2: služba obnovena"],
+  ewTitle:"East-west konektivita mezi clustery",ewModes:{none:"Žádná (jen přes GSLB)",submariner:"Submariner (L3, součást ACM)",skupper:"Service Interconnect (aplikační vrstva)",mesh:"Service Mesh 3 federace"},
+  ewDesc:{none:"Každý cluster je ostrov; volání mezi clustery jdou ven přes globální load balancer.",submariner:"Plochá síť podů a služeb napříč clustery; používá ji ODF Regional-DR a distribuované databáze.",skupper:"Virtuální aplikační síť přes mTLS; bez sdílené L3, služby se vystavují jménem.",mesh:"Multi-primary federace, preference lokální instance, east-west gateway pro vzdálenou."},
+  deps:{title:"Platformní závislosti dostupné v DC2",items:["DNS","NTP","IdP (AD/LDAP)","Image registry","Git","Vault","S3 pro zálohy"],ok:"DC2 může aplikace spustit.",missing:"DC2 aplikace nespustí: chybí {x}."}},
+ mgmt:{title:"Failover ACM hubu krok za krokem",lead:"Storyboard z runbooku ACM DR: dva huby, jeden label v Gitu. Projděte výpadek a sledujte, kdo ještě může spustit failover aplikací.",
+  next:"Další",prev:"Zpět",step:"Krok {n} ze 6",
+  steps:[{t:"Normální provoz",d:"Hub 1 je aktivní: spravuje workload clustery a zálohuje do S3 bucketu u Hubu 2. Hub 2 je standby a průběžně obnovuje pasivní data ze svého lokálního bucketu."},
+         {t:"Výpadek Hubu 2",d:"Pro workloady se nic nemění. Zálohy pokračují; standby se později znovu postaví z Gitu a bucketu."},
+         {t:"Výpadek Hubu 1",d:"Workload clustery běží dál, ale nikdo nemůže spustit ODF DR failover ani prosadit policies. Přesně pro tuto mezeru existuje pasivní hub."},
+         {t:"Label v Gitu nastaven na failover",d:"Policy přepne Hub 2 do failover: zachová spojení na lokální bucket a obnoví vše včetně aktivačních dat."},
+         {t:"Hub 2 se stává aktivním",d:"Label nastaven na active: Hub 2 zapne backup schedule a zapisuje do vzdáleného bucketu u Hubu 1. Managed clustery se znovu připojí (od ACM 2.7 automaticky)."},
+         {t:"Hub 1 se vrací jako standby",d:"Znovu postavený Hub 1 obnovuje pasivní data ze svého lokálního bucketu a čeká. Role jsou prohozené, nic jiného se nemění."}],
+  status:{backup:"Kdo zálohuje",trigger:"Kdo může spustit DR failover",risk:"Ohroženo"},
+  vals:{backup:["Hub 1 → S3 v DC2","Hub 1 → S3 v DC2","nikdo","nikdo","Hub 2 → S3 v DC1","Hub 2 → S3 v DC1"],
+        trigger:["Hub 1","Hub 1","nikdo","Hub 2, po obnově","Hub 2","Hub 2"],
+        risk:["nic","standby je studený, dokud se nepostaví","žádný DR failover; změny od poslední zálohy","okno od poslední zálohy","nic","nic"]},
+  labels:{hub1:"Hub 1 (DC1)",hub2:"Hub 2 (DC2)",s3:"S3 bucket",clusters:"Workload clustery",active:"active",standby:"standby",failover:"failover",down:"down",backup:"záloha",restore:"obnova"},
+  placement:{title:"Kam umístit aktivní hub",opts:{primary:"U primárního clusteru",secondary:"U sekundárního clusteru",neutral:"Neutrální třetí lokalita"},
+   impact:{primary:"Ztráta primárního DC vezme hub s sebou: krok 3 je reálný scénář a pasivní hub je povinný.",secondary:"Ztráta sekundárního DC hub nechá žít; ztráta primárního potřebuje pasivní hub jako v kroku 3.",neutral:"Hub přežije výpadek kteréhokoli DC. Failover lze spustit hned; hub recovery pro Metro-DR je v ODF 4.18 stále Technology Preview."}}},
+ virt:{title:"Jak dlouho trvá, než se VM vrátí",lead:"VM běží v jedné instanci, takže jeho RTO je součet detekce, tolerance, fencingu a startu. Posuňte časovače; řádek Výchozí je to, co dostanete bez ladění.",
+  tl:{rows:{def:"Výchozí",yours:"Vaše nastavení"},phases:{detect:"Detekce nodu",tolerate:"Tolerance podu",fence:"Fencing (FAR)",graceful:"Graceful deletion timeout",start:"Start VM + boot"},
+      stuck:"Bez fencingu zůstane volume připojený: VM se bezpečně nerestartuje",sliders:{detect:"Node monitor grace period",tolerate:"Tolerance (not-ready / unreachable)",fencing:"Fencing: Node Health Check + Fence Agents Remediation"},total:"Čas do restartu",sec:"s",min:"min"},
+  vmsc:{title:"Stejná kostra jako ve VMware",left:"vSphere Metro Storage Cluster",right:"OpenShift stretched 1+1+1",
+   rows:[["vSphere HA cluster přes dvě lokality","Jeden cluster, jeden control plane node na lokalitu"],["vSAN stretched / metro storage pole","ODF stretch cluster / metro pole"],["Witness appliance ve třetí lokalitě","Control plane node + storage arbiter ve třetí lokalitě"],["vSphere HA restartuje VM","Fencing + scheduler restartují VM"]]},
+  storm:{title:"Restart storm a kapacita",vms:"VM ve vypadlém DC",cap:"Volná kapacita v přeživším DC",fit:"{n} VM se restartuje, {m} čeká na kapacitu",ok:"Všechny VM se vejdou; pořadí restartu přesto řiďte.",over:"Kapacita překročena: {m} VM nenastartuje, dokud se kapacita neuvolní."}}
+};
+I18N.sk.viz = {
+ storage:{title:"Kde dáta ležia a ako sa replikujú",lead:"Prepnite replikačný vzor. Obrázok ukáže, kde sedí storage, ktorým smerom dáta tečú a či je potrebná tretia lokalita; riadok pod ním dá RPO, limit latencie a subskripcie.",
+  modes:{odfstretch:"ODF stretch cluster",metro:"ODF Metro-DR",regional:"ODF Regional-DR",array:"Storage pole (CSI)",app:"Replikácia v aplikácii",oadp:"OADP záloha"},
+  labels:{cluster:"OpenShift cluster",stretched:"OpenShift cluster (stretched 1+1+1)",odfZone:"ODF dátová zóna",rhcs:"Red Hat Ceph Storage stretch cluster (externý)",odf:"ODF cluster",array:"Storage pole",db:"DB / Kafka vnútri aplikácie",s3:"S3 objektové úložisko",arbiter:"ODF arbiter zóna + control plane node",cephArb:"Ceph monitor arbiter (~100 ms)",witness:"Witness / mediator poľa",notNeeded:"nie je potrebná",consensus:"3 lokality len pre konsenzuálne DB",sync:"synchrónna",async:"asynchrónna, interval ≥ 1 min",backup:"plánovaná záloha",restore:"obnova na vyžiadanie",appRepl:"replikáciu riadi aplikácia",vendor:"sync alebo async, podľa dodávateľa",site3:"Tretia lokalita"},
+  metrics:{rpo:"RPO",lat:"Latencia DC–DC",site3:"Tretia lokalita",subs:"Subskripcie"},
+  m:{odfstretch:{rpo:"0",lat:"< 10 ms",site3:"Áno: arbiter zóna + control plane node",subs:"ODF Advanced"},
+     metro:{rpo:"0",lat:"< 10 ms",site3:"Áno: Ceph arbiter až ~100 ms",subs:"ODF Advanced + ACM"},
+     regional:{rpo:"≥ 1 min + change rate",lat:"bez limitu",site3:"Nie",subs:"ODF Advanced + ACM"},
+     array:{rpo:"0 (sync) alebo > 0 (async)",lat:"podľa dodávateľa, sync ≤ ~5–10 ms",site3:"Sync: witness nutný",subs:"Dodávateľ + CSI driver; ACM voliteľne"},
+     app:{rpo:"podľa aplikácie, často ~0",lat:"podľa aplikácie",site3:"Len pre konsenzuálne databázy",subs:"Aplikácia / middleware"},
+     oadp:{rpo:"frekvencia záloh",lat:"bez limitu",site3:"Nie",subs:"OADP je súčasť OpenShiftu"}}},
+ traffic:{title:"Sledujte request pri failoveri",lead:"Vyraďte DC1 a sledujte, čo rozhoduje o RTO: tri neúspešné health checky plus DNS TTL. OpenShift sám na tejto ceste nie je.",
+  labels:{client:"Klient",gslb:"GSLB / DNS",ingress1:"Ingress DC1",ingress2:"Ingress DC2",pods:"Aplikačné pody",ew:"east-west"},
+  fail:"Vyradiť DC1",restore:"Vrátiť DC1",hc:"Interval health checku",ttl:"DNS TTL",rto:"Odhad RTO",rtoNote:"3 neúspešné checky + TTL; cache resolverov môže pridať viac",
+  steps:["V poriadku: GSLB odpovedá DC1, requesty obsluhuje DC1","DC1 mimo prevádzky: klienti stále resolvujú DC1 a dostávajú chyby","Tretí health check zlyhal: GSLB označí DC1 ako down","Nacachované DNS odpovede vypršia (TTL)","Klienti resolvujú DC2: služba obnovená"],
+  ewTitle:"East-west konektivita medzi clustermi",ewModes:{none:"Žiadna (len cez GSLB)",submariner:"Submariner (L3, súčasť ACM)",skupper:"Service Interconnect (aplikačná vrstva)",mesh:"Service Mesh 3 federácia"},
+  ewDesc:{none:"Každý cluster je ostrov; volania medzi clustermi idú von cez globálny load balancer.",submariner:"Plochá sieť podov a služieb naprieč clustermi; používa ju ODF Regional-DR a distribuované databázy.",skupper:"Virtuálna aplikačná sieť cez mTLS; bez zdieľanej L3, služby sa vystavujú menom.",mesh:"Multi-primary federácia, preferencia lokálnej inštancie, east-west gateway pre vzdialenú."},
+  deps:{title:"Platformové závislosti dostupné v DC2",items:["DNS","NTP","IdP (AD/LDAP)","Image registry","Git","Vault","S3 pre zálohy"],ok:"DC2 môže aplikácie spustiť.",missing:"DC2 aplikácie nespustí: chýba {x}."}},
+ mgmt:{title:"Failover ACM hubu krok za krokom",lead:"Storyboard z runbooku ACM DR: dva huby, jeden label v Gite. Prejdite výpadok a sledujte, kto ešte môže spustiť failover aplikácií.",
+  next:"Ďalej",prev:"Späť",step:"Krok {n} zo 6",
+  steps:[{t:"Normálna prevádzka",d:"Hub 1 je aktívny: spravuje workload clustery a zálohuje do S3 bucketu pri Hube 2. Hub 2 je standby a priebežne obnovuje pasívne dáta zo svojho lokálneho bucketu."},
+         {t:"Výpadok Hubu 2",d:"Pre workloady sa nič nemení. Zálohy pokračujú; standby sa neskôr znova postaví z Gitu a bucketu."},
+         {t:"Výpadok Hubu 1",d:"Workload clustery bežia ďalej, ale nikto nemôže spustiť ODF DR failover ani presadiť policies. Presne pre túto medzeru existuje pasívny hub."},
+         {t:"Label v Gite nastavený na failover",d:"Policy prepne Hub 2 do failover: zachová spojenie na lokálny bucket a obnoví všetko vrátane aktivačných dát."},
+         {t:"Hub 2 sa stáva aktívnym",d:"Label nastavený na active: Hub 2 zapne backup schedule a zapisuje do vzdialeného bucketu pri Hube 1. Managed clustery sa znova pripoja (od ACM 2.7 automaticky)."},
+         {t:"Hub 1 sa vracia ako standby",d:"Znova postavený Hub 1 obnovuje pasívne dáta zo svojho lokálneho bucketu a čaká. Roly sú vymenené, nič iné sa nemení."}],
+  status:{backup:"Kto zálohuje",trigger:"Kto môže spustiť DR failover",risk:"Ohrozené"},
+  vals:{backup:["Hub 1 → S3 v DC2","Hub 1 → S3 v DC2","nikto","nikto","Hub 2 → S3 v DC1","Hub 2 → S3 v DC1"],
+        trigger:["Hub 1","Hub 1","nikto","Hub 2, po obnove","Hub 2","Hub 2"],
+        risk:["nič","standby je studený, kým sa nepostaví","žiadny DR failover; zmeny od poslednej zálohy","okno od poslednej zálohy","nič","nič"]},
+  labels:{hub1:"Hub 1 (DC1)",hub2:"Hub 2 (DC2)",s3:"S3 bucket",clusters:"Workload clustery",active:"active",standby:"standby",failover:"failover",down:"down",backup:"záloha",restore:"obnova"},
+  placement:{title:"Kam umiestniť aktívny hub",opts:{primary:"Pri primárnom clusteri",secondary:"Pri sekundárnom clusteri",neutral:"Neutrálna tretia lokalita"},
+   impact:{primary:"Strata primárneho DC vezme hub so sebou: krok 3 je reálny scenár a pasívny hub je povinný.",secondary:"Strata sekundárneho DC hub nechá žiť; strata primárneho potrebuje pasívny hub ako v kroku 3.",neutral:"Hub prežije výpadok ktoréhokoľvek DC. Failover možno spustiť hneď; hub recovery pre Metro-DR je v ODF 4.18 stále Technology Preview."}}},
+ virt:{title:"Ako dlho trvá, kým sa VM vráti",lead:"VM beží v jednej inštancii, takže jeho RTO je súčet detekcie, tolerancie, fencingu a štartu. Posuňte časovače; riadok Predvolené je to, čo dostanete bez ladenia.",
+  tl:{rows:{def:"Predvolené",yours:"Vaše nastavenie"},phases:{detect:"Detekcia nodu",tolerate:"Tolerancia podu",fence:"Fencing (FAR)",graceful:"Graceful deletion timeout",start:"Štart VM + boot"},
+      stuck:"Bez fencingu zostane volume pripojený: VM sa bezpečne nereštartuje",sliders:{detect:"Node monitor grace period",tolerate:"Tolerancia (not-ready / unreachable)",fencing:"Fencing: Node Health Check + Fence Agents Remediation"},total:"Čas do reštartu",sec:"s",min:"min"},
+  vmsc:{title:"Rovnaká kostra ako vo VMware",left:"vSphere Metro Storage Cluster",right:"OpenShift stretched 1+1+1",
+   rows:[["vSphere HA cluster cez dve lokality","Jeden cluster, jeden control plane node na lokalitu"],["vSAN stretched / metro storage pole","ODF stretch cluster / metro pole"],["Witness appliance v tretej lokalite","Control plane node + storage arbiter v tretej lokalite"],["vSphere HA reštartuje VM","Fencing + scheduler reštartujú VM"]]},
+  storm:{title:"Restart storm a kapacita",vms:"VM vo vypadnutom DC",cap:"Voľná kapacita v preživšom DC",fit:"{n} VM sa reštartuje, {m} čaká na kapacitu",ok:"Všetky VM sa zmestia; poradie reštartu napriek tomu riaďte.",over:"Kapacita prekročená: {m} VM nenaštartuje, kým sa kapacita neuvoľní."}}
+};
+I18N.pl.viz = {
+ storage:{title:"Gdzie leżą dane i jak się replikują",lead:"Przełącz wzorzec replikacji. Obraz pokazuje, gdzie siedzi storage, w którą stronę płyną dane i czy potrzebna jest trzecia lokalizacja; wiersz poniżej podaje RPO, limit latencji i subskrypcje.",
+  modes:{odfstretch:"ODF stretch cluster",metro:"ODF Metro-DR",regional:"ODF Regional-DR",array:"Macierz (CSI)",app:"Replikacja w aplikacji",oadp:"Kopia OADP"},
+  labels:{cluster:"Klaster OpenShift",stretched:"Klaster OpenShift (stretched 1+1+1)",odfZone:"Strefa danych ODF",rhcs:"Red Hat Ceph Storage stretch cluster (zewnętrzny)",odf:"Klaster ODF",array:"Macierz dyskowa",db:"DB / Kafka wewnątrz aplikacji",s3:"S3 object storage",arbiter:"Strefa arbitra ODF + węzeł control plane",cephArb:"Arbiter monitora Ceph (~100 ms)",witness:"Witness / mediator macierzy",notNeeded:"niepotrzebna",consensus:"3 lokalizacje tylko dla baz konsensusowych",sync:"synchroniczna",async:"asynchroniczna, interwał ≥ 1 min",backup:"kopia wg harmonogramu",restore:"odtworzenie na żądanie",appRepl:"replikacją steruje aplikacja",vendor:"sync lub async, wg dostawcy",site3:"Trzecia lokalizacja"},
+  metrics:{rpo:"RPO",lat:"Latencja DC–DC",site3:"Trzecia lokalizacja",subs:"Subskrypcje"},
+  m:{odfstretch:{rpo:"0",lat:"< 10 ms",site3:"Tak: strefa arbitra + węzeł control plane",subs:"ODF Advanced"},
+     metro:{rpo:"0",lat:"< 10 ms",site3:"Tak: arbiter Ceph do ~100 ms",subs:"ODF Advanced + ACM"},
+     regional:{rpo:"≥ 1 min + change rate",lat:"bez limitu",site3:"Nie",subs:"ODF Advanced + ACM"},
+     array:{rpo:"0 (sync) lub > 0 (async)",lat:"wg dostawcy, sync ≤ ~5–10 ms",site3:"Sync: witness wymagany",subs:"Dostawca + sterownik CSI; ACM opcjonalnie"},
+     app:{rpo:"wg aplikacji, często ~0",lat:"wg aplikacji",site3:"Tylko dla baz konsensusowych",subs:"Aplikacja / middleware"},
+     oadp:{rpo:"częstotliwość kopii",lat:"bez limitu",site3:"Nie",subs:"OADP jest częścią OpenShift"}}},
+ traffic:{title:"Śledź żądanie podczas failoveru",lead:"Wyłącz DC1 i zobacz, co decyduje o RTO: trzy nieudane health checki plus DNS TTL. Sam OpenShift nie leży na tej ścieżce.",
+  labels:{client:"Klient",gslb:"GSLB / DNS",ingress1:"Ingress DC1",ingress2:"Ingress DC2",pods:"Pody aplikacji",ew:"east-west"},
+  fail:"Wyłącz DC1",restore:"Przywróć DC1",hc:"Interwał health checku",ttl:"DNS TTL",rto:"Szacowane RTO",rtoNote:"3 nieudane checki + TTL; cache resolverów może dodać więcej",
+  steps:["W porządku: GSLB odpowiada DC1, żądania obsługuje DC1","DC1 niedostępne: klienci wciąż rozwiązują DC1 i dostają błędy","Trzeci health check nieudany: GSLB oznacza DC1 jako down","Zbuforowane odpowiedzi DNS wygasają (TTL)","Klienci rozwiązują DC2: usługa przywrócona"],
+  ewTitle:"Łączność east-west między klastrami",ewModes:{none:"Brak (tylko przez GSLB)",submariner:"Submariner (L3, część ACM)",skupper:"Service Interconnect (warstwa aplikacji)",mesh:"Federacja Service Mesh 3"},
+  ewDesc:{none:"Każdy klaster jest wyspą; wywołania między klastrami wychodzą przez globalny load balancer.",submariner:"Płaska sieć podów i usług między klastrami; używana przez ODF Regional-DR i bazy rozproszone.",skupper:"Wirtualna sieć aplikacyjna po mTLS; bez wspólnego L3, usługi wystawiane po nazwie.",mesh:"Federacja multi-primary, preferencja instancji lokalnej, east-west gateway do zdalnej."},
+  deps:{title:"Zależności platformowe dostępne w DC2",items:["DNS","NTP","IdP (AD/LDAP)","Image registry","Git","Vault","S3 na kopie"],ok:"DC2 może uruchomić aplikacje.",missing:"DC2 nie uruchomi aplikacji: brakuje {x}."}},
+ mgmt:{title:"Failover huba ACM krok po kroku",lead:"Storyboard z runbooka ACM DR: dwa huby, jeden label w Gicie. Przejdź przez awarię i zobacz, kto wciąż może wyzwolić failover aplikacji.",
+  next:"Dalej",prev:"Wstecz",step:"Krok {n} z 6",
+  steps:[{t:"Normalna praca",d:"Hub 1 jest aktywny: zarządza klastrami workload i kopiuje do bucketu S3 przy Hubie 2. Hub 2 jest standby i na bieżąco odtwarza dane pasywne ze swojego lokalnego bucketu."},
+         {t:"Awaria Huba 2",d:"Dla workloadów nic się nie zmienia. Kopie trwają; standby odbudowuje się później z Gita i bucketu."},
+         {t:"Awaria Huba 1",d:"Klastry workload działają dalej, ale nikt nie może wyzwolić failoveru ODF DR ani wymusić policies. Właśnie dla tej luki istnieje hub pasywny."},
+         {t:"Label w Gicie ustawiony na failover",d:"Policy przełącza Hub 2 w failover: zachowuje połączenie z lokalnym bucketem i odtwarza wszystko, łącznie z danymi aktywacyjnymi."},
+         {t:"Hub 2 staje się aktywny",d:"Label ustawiony na active: Hub 2 włącza harmonogram kopii i pisze do zdalnego bucketu przy Hubie 1. Klastry zarządzane podłączają się ponownie (od ACM 2.7 automatycznie)."},
+         {t:"Hub 1 wraca jako standby",d:"Odbudowany Hub 1 odtwarza dane pasywne ze swojego lokalnego bucketu i czeka. Role są zamienione, nic innego się nie zmienia."}],
+  status:{backup:"Kto kopiuje",trigger:"Kto może wyzwolić failover DR",risk:"Zagrożone"},
+  vals:{backup:["Hub 1 → S3 w DC2","Hub 1 → S3 w DC2","nikt","nikt","Hub 2 → S3 w DC1","Hub 2 → S3 w DC1"],
+        trigger:["Hub 1","Hub 1","nikt","Hub 2, po odtworzeniu","Hub 2","Hub 2"],
+        risk:["nic","standby jest zimny do odbudowy","brak failoveru DR; zmiany od ostatniej kopii","okno od ostatniej kopii","nic","nic"]},
+  labels:{hub1:"Hub 1 (DC1)",hub2:"Hub 2 (DC2)",s3:"Bucket S3",clusters:"Klastry workload",active:"active",standby:"standby",failover:"failover",down:"down",backup:"kopia",restore:"odtworzenie"},
+  placement:{title:"Gdzie umieścić aktywny hub",opts:{primary:"Przy klastrze głównym",secondary:"Przy klastrze zapasowym",neutral:"Neutralna trzecia lokalizacja"},
+   impact:{primary:"Utrata głównego DC zabiera hub ze sobą: krok 3 to realny scenariusz i hub pasywny jest obowiązkowy.",secondary:"Utrata zapasowego DC zostawia hub przy życiu; utrata głównego wymaga huba pasywnego jak w kroku 3.",neutral:"Hub przeżywa utratę dowolnego DC. Failover można wyzwolić od razu; hub recovery dla Metro-DR jest w ODF 4.18 wciąż Technology Preview."}}},
+ virt:{title:"Ile czasu zajmuje powrót VM",lead:"VM działa w jednej instancji, więc jej RTO to suma detekcji, tolerancji, fencingu i startu. Przesuń timery; wiersz Domyślne to, co dostaniesz bez strojenia.",
+  tl:{rows:{def:"Domyślne",yours:"Twoje ustawienia"},phases:{detect:"Detekcja węzła",tolerate:"Tolerancja poda",fence:"Fencing (FAR)",graceful:"Graceful deletion timeout",start:"Start VM + boot"},
+      stuck:"Bez fencingu wolumen pozostaje podłączony: VM nie restartuje się bezpiecznie",sliders:{detect:"Node monitor grace period",tolerate:"Tolerancja (not-ready / unreachable)",fencing:"Fencing: Node Health Check + Fence Agents Remediation"},total:"Czas do restartu",sec:"s",min:"min"},
+  vmsc:{title:"Ten sam szkielet co w VMware",left:"vSphere Metro Storage Cluster",right:"OpenShift stretched 1+1+1",
+   rows:[["Klaster vSphere HA na dwie lokalizacje","Jeden klaster, jeden węzeł control plane na lokalizację"],["vSAN stretched / macierz metro","ODF stretch cluster / macierz metro"],["Witness appliance w trzeciej lokalizacji","Węzeł control plane + arbiter storage w trzeciej lokalizacji"],["vSphere HA restartuje VM","Fencing + scheduler restartują VM"]]},
+  storm:{title:"Restart storm i pojemność",vms:"VM w utraconym DC",cap:"Wolna pojemność w ocalałym DC",fit:"{n} VM restartuje się, {m} czeka na pojemność",ok:"Wszystkie VM się mieszczą; mimo to kontroluj kolejność restartu.",over:"Pojemność przekroczona: {m} VM nie wystartuje, dopóki nie zwolni się miejsce."}}
+};
+I18N.ro.viz = {
+ storage:{title:"Unde stau datele și cum se replică",lead:"Comutați modelul de replicare. Imaginea arată unde stă storage-ul, în ce direcție curg datele și dacă e nevoie de a treia locație; rândul de sub ea dă RPO, limita de latență și subscripțiile.",
+  modes:{odfstretch:"ODF stretch cluster",metro:"ODF Metro-DR",regional:"ODF Regional-DR",array:"Storage array (CSI)",app:"Replicare în aplicație",oadp:"Backup OADP"},
+  labels:{cluster:"Cluster OpenShift",stretched:"Cluster OpenShift (stretched 1+1+1)",odfZone:"Zonă de date ODF",rhcs:"Red Hat Ceph Storage stretch cluster (extern)",odf:"Cluster ODF",array:"Storage array",db:"DB / Kafka în aplicație",s3:"S3 object storage",arbiter:"Zonă arbitru ODF + nod control plane",cephArb:"Arbitru monitor Ceph (~100 ms)",witness:"Witness / mediator al array-ului",notNeeded:"nu este necesară",consensus:"3 locații doar pentru DB cu consens",sync:"sincronă",async:"asincronă, interval ≥ 1 min",backup:"backup programat",restore:"restaurare la cerere",appRepl:"replicarea e condusă de aplicație",vendor:"sync sau async, după furnizor",site3:"A treia locație"},
+  metrics:{rpo:"RPO",lat:"Latență DC–DC",site3:"A treia locație",subs:"Subscripții"},
+  m:{odfstretch:{rpo:"0",lat:"< 10 ms",site3:"Da: zonă arbitru + nod control plane",subs:"ODF Advanced"},
+     metro:{rpo:"0",lat:"< 10 ms",site3:"Da: arbitru Ceph până la ~100 ms",subs:"ODF Advanced + ACM"},
+     regional:{rpo:"≥ 1 min + rata de schimbare",lat:"fără limită",site3:"Nu",subs:"ODF Advanced + ACM"},
+     array:{rpo:"0 (sync) sau > 0 (async)",lat:"după furnizor, sync ≤ ~5–10 ms",site3:"Sync: witness necesar",subs:"Furnizor + driver CSI; ACM opțional"},
+     app:{rpo:"după aplicație, adesea ~0",lat:"după aplicație",site3:"Doar pentru baze de date cu consens",subs:"Aplicație / middleware"},
+     oadp:{rpo:"frecvența backup-urilor",lat:"fără limită",site3:"Nu",subs:"OADP face parte din OpenShift"}}},
+ traffic:{title:"Urmăriți o cerere prin failover",lead:"Opriți DC1 și vedeți ce decide RTO-ul: trei health check-uri eșuate plus DNS TTL. OpenShift în sine nu este pe acest drum.",
+  labels:{client:"Client",gslb:"GSLB / DNS",ingress1:"Ingress DC1",ingress2:"Ingress DC2",pods:"Pod-uri aplicație",ew:"east-west"},
+  fail:"Oprește DC1",restore:"Readu DC1",hc:"Interval health check",ttl:"DNS TTL",rto:"RTO estimat",rtoNote:"3 check-uri eșuate + TTL; cache-urile resolver-elor pot adăuga mai mult",
+  steps:["Sănătos: GSLB răspunde cu DC1, cererile sunt servite în DC1","DC1 căzut: clienții încă rezolvă DC1 și primesc erori","Al treilea health check eșuează: GSLB marchează DC1 ca down","Răspunsurile DNS din cache expiră (TTL)","Clienții rezolvă DC2: serviciul e restabilit"],
+  ewTitle:"Conectivitate east-west între clustere",ewModes:{none:"Niciuna (doar prin GSLB)",submariner:"Submariner (L3, parte din ACM)",skupper:"Service Interconnect (nivel aplicație)",mesh:"Federare Service Mesh 3"},
+  ewDesc:{none:"Fiecare cluster e o insulă; apelurile între clustere ies prin load balancer-ul global.",submariner:"Rețea plată de pod-uri și servicii între clustere; folosită de ODF Regional-DR și de bazele de date distribuite.",skupper:"Rețea virtuală de aplicație peste mTLS; fără L3 comun, serviciile sunt expuse după nume.",mesh:"Federare multi-primary, instanța locală preferată, east-west gateway pentru cea de la distanță."},
+  deps:{title:"Dependențe de platformă disponibile în DC2",items:["DNS","NTP","IdP (AD/LDAP)","Image registry","Git","Vault","S3 pentru backup"],ok:"DC2 poate porni aplicațiile.",missing:"DC2 nu poate porni aplicațiile: lipsește {x}."}},
+ mgmt:{title:"Failover-ul hub-ului ACM, pas cu pas",lead:"Storyboard-ul din runbook-ul ACM DR: două hub-uri, un label în Git. Parcurgeți o cădere și vedeți cine mai poate declanșa failover-ul aplicațiilor.",
+  next:"Înainte",prev:"Înapoi",step:"Pasul {n} din 6",
+  steps:[{t:"Funcționare normală",d:"Hub 1 este activ: gestionează clusterele workload și face backup în bucket-ul S3 de lângă Hub 2. Hub 2 este standby și restaurează continuu datele pasive din bucket-ul său local."},
+         {t:"Hub 2 cade",d:"Nimic nu se schimbă pentru workload-uri. Backup-urile continuă; standby-ul se reconstruiește mai târziu din Git și din bucket."},
+         {t:"Hub 1 cade",d:"Clusterele workload rulează în continuare, dar nimeni nu poate declanșa failover-ul ODF DR sau aplica policies. Exact pentru acest gol există hub-ul pasiv."},
+         {t:"Label-ul din Git setat pe failover",d:"Policy comută Hub 2 în failover: păstrează conexiunea la bucket-ul local și restaurează tot, inclusiv datele de activare."},
+         {t:"Hub 2 devine activ",d:"Label setat pe active: Hub 2 pornește programul de backup și scrie în bucket-ul de la distanță de lângă Hub 1. Clusterele gestionate se reconectează (automat din ACM 2.7)."},
+         {t:"Hub 1 revine ca standby",d:"Hub 1 reconstruit restaurează datele pasive din bucket-ul local și așteaptă. Rolurile sunt inversate, nimic altceva nu se schimbă."}],
+  status:{backup:"Cine face backup",trigger:"Cine poate declanșa failover DR",risk:"În pericol"},
+  vals:{backup:["Hub 1 → S3 în DC2","Hub 1 → S3 în DC2","nimeni","nimeni","Hub 2 → S3 în DC1","Hub 2 → S3 în DC1"],
+        trigger:["Hub 1","Hub 1","nimeni","Hub 2, după restaurare","Hub 2","Hub 2"],
+        risk:["nimic","standby-ul e rece până la reconstruire","niciun failover DR; schimbările de la ultimul backup","fereastra de la ultimul backup","nimic","nimic"]},
+  labels:{hub1:"Hub 1 (DC1)",hub2:"Hub 2 (DC2)",s3:"Bucket S3",clusters:"Clustere workload",active:"active",standby:"standby",failover:"failover",down:"down",backup:"backup",restore:"restaurare"},
+  placement:{title:"Unde să stea hub-ul activ",opts:{primary:"Lângă clusterul primar",secondary:"Lângă clusterul secundar",neutral:"A treia locație, neutră"},
+   impact:{primary:"Pierderea DC-ului primar ia hub-ul cu ea: pasul 3 este un scenariu real și hub-ul pasiv este obligatoriu.",secondary:"Pierderea DC-ului secundar lasă hub-ul în viață; pierderea celui primar are nevoie de hub-ul pasiv ca la pasul 3.",neutral:"Hub-ul supraviețuiește oricărui DC. Failover-ul se poate declanșa imediat; hub recovery pentru Metro-DR este încă Technology Preview în ODF 4.18."}}},
+ virt:{title:"Cât durează până revine un VM",lead:"Un VM rulează într-o singură instanță, deci RTO-ul său este suma detecției, toleranței, fencing-ului și pornirii. Reglați timerele; rândul Implicit este ce primiți fără reglaje.",
+  tl:{rows:{def:"Implicit",yours:"Setările dumneavoastră"},phases:{detect:"Detecție nod",tolerate:"Toleranță pod",fence:"Fencing (FAR)",graceful:"Graceful deletion timeout",start:"Pornire VM + boot"},
+      stuck:"Fără fencing volumul rămâne atașat: VM-ul nu repornește în siguranță",sliders:{detect:"Node monitor grace period",tolerate:"Toleranță (not-ready / unreachable)",fencing:"Fencing: Node Health Check + Fence Agents Remediation"},total:"Timp până la repornire",sec:"s",min:"min"},
+  vmsc:{title:"Același schelet ca în VMware",left:"vSphere Metro Storage Cluster",right:"OpenShift stretched 1+1+1",
+   rows:[["Cluster vSphere HA pe două locații","Un cluster, un nod control plane pe locație"],["vSAN stretched / storage array metro","ODF stretch cluster / array metro"],["Witness appliance într-o a treia locație","Nod control plane + arbitru storage într-o a treia locație"],["vSphere HA repornește VM-urile","Fencing + scheduler repornesc VM-urile"]]},
+  storm:{title:"Restart storm și capacitate",vms:"VM-uri în DC-ul căzut",cap:"Capacitate liberă în DC-ul supraviețuitor",fit:"{n} VM-uri repornesc, {m} așteaptă capacitate",ok:"Toate VM-urile încap; limitați totuși ordinea de repornire.",over:"Capacitate depășită: {m} VM-uri nu pot porni până nu se eliberează capacitate."}}
+};
 const SOURCES = {
  docs:[
   {t:"OCP 4.21 — Guidance for clusters that span data centers",u:"https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/etcd/etcd-guidance-span"},
@@ -1097,6 +1346,139 @@ document.addEventListener("input",e=>{if(e.target.id==="q_latency"){S.cfg.latenc
 window.addEventListener("scroll",updateTabs,{passive:true});
 renderAll();
 if(location.hash){const el=document.getElementById(location.hash.slice(1)); if(el) setTimeout(()=>el.scrollIntoView(),50);}
+/* ---------- interactive visuals: storage, traffic, mgmt, virt ---------- */
+S.viz={storage:"regional",traffic:{down:false,phase:0,hc:10,ttl:60,ew:"none",missing:new Set()},mgmt:{step:0,place:"primary"},virt:{detect:40,tolerate:10,fencing:true,vms:120,cap:60}};
+try{const v=JSON.parse(localStorage.getItem("ocp2dc.viz")||"null"); if(v){S.viz.storage=v.storage||S.viz.storage; Object.assign(S.viz.mgmt,v.mgmt||{}); Object.assign(S.viz.virt,v.virt||{}); if(v.traffic){S.viz.traffic.hc=v.traffic.hc||10;S.viz.traffic.ttl=v.traffic.ttl||60;S.viz.traffic.ew=v.traffic.ew||"none";}}}catch(e){}
+const saveViz=()=>{try{localStorage.setItem("ocp2dc.viz",JSON.stringify({storage:S.viz.storage,mgmt:S.viz.mgmt,virt:S.viz.virt,traffic:{hc:S.viz.traffic.hc,ttl:S.viz.traffic.ttl,ew:S.viz.traffic.ew}}));}catch(e){}};
+
+const DEFS=`<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker><marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mkA"/></marker></defs>`;
+const box=(x,y,w,h,cls="")=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" class="vb ${cls}"/>`;
+const txt=(x,y,s,cls="",anchor="middle")=>`<text x="${x}" y="${y}" text-anchor="${anchor}" class="vt ${cls}">${esc(s)}</text>`;
+const line=(x1,y1,x2,y2,cls="",both=false)=>`<path d="M${x1} ${y1}L${x2} ${y2}" class="vl ${cls}" marker-end="url(#${cls.includes("acc")?"arA":"ar"})"${both?` marker-start="url(#${cls.includes("acc")?"arA":"ar"})"`:""}/>`;
+const path=(d,cls="",both=false)=>`<path d="${d}" class="vl ${cls}" marker-end="url(#${cls.includes("acc")?"arA":"ar"})"${both?` marker-start="url(#${cls.includes("acc")?"arA":"ar"})"`:""}/>`;
+const svgWrap=(h,inner,label)=>`<svg class="viz" viewBox="0 0 760 ${h}" role="img" aria-label="${esc(label)}">${DEFS}${inner}</svg>`;
+
+/* storage */
+function renderStorage(){
+ const V=T.viz.storage, L=V.labels, m=S.viz.storage;
+ const ctl=`<div class="seg wrap-seg" data-vkey="storage">${Object.entries(V.modes).map(([k,v])=>`<button data-val="${k}" class="${k===m?"on":""}">${esc(v)}</button>`).join("")}</div>`;
+ let g=""; const dc=(x,name)=>box(x,96,300,236,"zone")+txt(x+16,120,name,"h","start");
+ g+=dc(24,T.sim.sites.dc1)+dc(436,T.sim.sites.dc2);
+ const s3need=["odfstretch","metro","array"].includes(m);
+ g+=box(260,16,240,60,s3need?"zone":"zone dashed")+txt(380,38,L.site3,"h")+txt(380,58,m==="odfstretch"?L.arbiter:m==="metro"?L.cephArb:m==="array"?L.witness:m==="app"?L.consensus:L.notNeeded,"s");
+ const cl=(x,y,w,h,s)=>box(x,y,w,h,"nd")+txt(x+w/2,y+h/2+4,s,"");
+ if(m==="odfstretch"){ g+=cl(44,136,672,48,L.stretched); g+=cl(44,220,260,56,L.odfZone)+cl(456,220,260,56,L.odfZone); g+=line(308,248,452,248,"acc",true)+txt(380,300,L.sync,"s"); g+=path("M380 76V136","dim"); }
+ else if(m==="metro"){ g+=cl(44,136,260,48,L.cluster)+cl(456,136,260,48,L.cluster); g+=cl(44,220,672,56,L.rhcs); g+=line(300,262,460,262,"acc",true)+txt(380,300,L.sync,"s"); g+=path("M380 76V220","dim"); }
+ else if(m==="regional"){ g+=cl(44,136,260,48,L.cluster)+cl(456,136,260,48,L.cluster); g+=cl(44,220,260,56,L.odf)+cl(456,220,260,56,L.odf); g+=line(308,248,452,248,"acc dashed")+txt(380,300,L.async,"s"); }
+ else if(m==="array"){ g+=cl(44,136,260,48,L.cluster)+cl(456,136,260,48,L.cluster); g+=cl(44,220,260,56,L.array)+cl(456,220,260,56,L.array); g+=line(308,248,452,248,"acc",true)+txt(380,300,L.vendor,"s"); g+=path("M380 76V136","dim"); }
+ else if(m==="app"){ g+=box(44,136,260,140,"nd")+txt(174,158,L.cluster)+box(456,136,260,140,"nd")+txt(586,158,L.cluster); g+=cl(64,208,220,52,L.db)+cl(476,208,220,52,L.db); g+=line(288,234,472,234,"acc dashed",true)+txt(380,214,L.appRepl,"s"); }
+ else { g+=cl(44,136,260,48,L.cluster)+cl(456,136,260,48,L.cluster); g+=cl(290,220,180,56,L.s3); g+=path("M174 184V248H286","acc dotted")+txt(220,214,L.backup,"s"); g+=path("M474 248H586V188","acc dotted")+txt(540,214,L.restore,"s"); }
+ const M=V.m[m];
+ const kv=`<div class="kv"><div><span>${esc(V.metrics.rpo)}</span>${esc(M.rpo)}</div><div><span>${esc(V.metrics.lat)}</span>${esc(M.lat)}</div><div><span>${esc(V.metrics.site3)}</span>${esc(M.site3)}</div><div><span>${esc(V.metrics.subs)}</span>${esc(M.subs)}</div></div>`;
+ $("#vizStorage").innerHTML=`<div><h3>${esc(V.title)}</h3><p class="lead" style="font-size:.92rem">${esc(V.lead)}</p></div>${ctl}<div class="vizwrap">${svgWrap(344,g,V.title)}</div>${kv}`;
+}
+
+/* traffic */
+let trafficTimers=[];
+function renderTraffic(){
+ const V=T.viz.traffic, L=V.labels, s=S.viz.traffic, ph=s.phase;
+ const d1=s.down, toDc2=ph>=4, rto=3*s.hc+s.ttl;
+ let g="";
+ g+=box(290,14,180,40,"nd")+txt(380,39,L.client);
+ g+=box(260,84,240,44,"nd")+txt(380,111,L.gslb);
+ g+=line(380,54,380,84,"acc");
+ g+=box(40,176,300,170,d1?"zone down":"zone")+txt(56,200,T.sim.sites.dc1,"h","start");
+ const miss=s.missing.size>0;
+ g+=box(420,176,300,170,miss?"zone warn":"zone")+txt(436,200,T.sim.sites.dc2,"h","start");
+ g+=box(70,214,240,40,d1?"nd dead":"nd")+txt(190,239,L.ingress1)+box(450,214,240,40,"nd")+txt(570,239,L.ingress2);
+ g+=box(70,284,240,44,d1?"nd dead":"nd")+txt(190,311,L.pods)+box(450,284,240,44,"nd")+txt(570,311,L.pods);
+ g+=path("M300 128L190 214",toDc2?"dim dashed":(d1?"crit":"acc"))+path("M460 128L570 214",toDc2?"acc":"dim dashed");
+ g+=line(190,254,190,284,d1?"dim":"")+line(570,254,570,284,"");
+ const ewCls={none:"none",submariner:"acc",skupper:"acc dashed",mesh:"acc dotted"}[s.ew];
+ if(s.ew!=="none") g+=line(310,306,450,306,ewCls,true)+txt(380,298,L.ew,"s");
+ if(ph===1||ph===2){ g+=txt(190,360,"✕ "+(ph===1?"1/3":"3/3"),"crit"); }
+ const steps=`<ol class="steps">${V.steps.map((t,i)=>`<li class="${i===ph?"cur":i<ph?"done":""}">${esc(t)}</li>`).join("")}</ol>`;
+ const ctl=`<div class="controls"><button class="btn ${d1?"on":""}" id="tFail">${esc(d1?V.restore:V.fail)}</button>
+  <label class="ctl"><span>${esc(V.hc)}: <b id="hcOut">${s.hc} s</b></span><input type="range" id="tHc" min="5" max="60" step="5" value="${s.hc}"></label>
+  <label class="ctl"><span>${esc(V.ttl)}: <b id="ttlOut">${s.ttl} s</b></span><input type="range" id="tTtl" min="5" max="300" step="5" value="${s.ttl}"></label>
+  <div class="stat" style="min-width:180px"><span>${esc(V.rto)}</span><b>≈ ${rto} s</b></div></div><p class="progress">${esc(V.rtoNote)}</p>`;
+ const ew=`<div><h4>${esc(V.ewTitle)}</h4><div class="seg wrap-seg" data-vkey="ew">${Object.entries(V.ewModes).map(([k,v])=>`<button data-val="${k}" class="${k===s.ew?"on":""}">${esc(v)}</button>`).join("")}</div><p style="font-size:.9rem;margin-top:6px">${esc(V.ewDesc[s.ew])}</p></div>`;
+ const deps=`<div><h4>${esc(V.deps.title)}</h4><div class="chips">${V.deps.items.map((it,i)=>`<button class="chip ${s.missing.has(i)?"off":"on"}" data-dep="${i}">${esc(it)}</button>`).join("")}</div><div class="verdict ${miss?"warn":"good"}">${esc(miss?fmt(V.deps.missing,{x:[...s.missing].map(i=>V.deps.items[i]).join(", ")}):V.deps.ok)}</div></div>`;
+ $("#vizTraffic").innerHTML=`<div><h3>${esc(V.title)}</h3><p class="lead" style="font-size:.92rem">${esc(V.lead)}</p></div>${ctl}<div class="sim"><div class="vizwrap">${svgWrap(372,g,V.title)}</div>${steps}</div>${ew}${deps}`;
+}
+function trafficFail(){
+ const s=S.viz.traffic; trafficTimers.forEach(clearTimeout); trafficTimers=[];
+ if(s.down){s.down=false;s.phase=0;renderTraffic();return;}
+ s.down=true;s.phase=1;renderTraffic();
+ [2,3,4].forEach((p,i)=>trafficTimers.push(setTimeout(()=>{s.phase=p;renderTraffic();},900*(i+1))));
+}
+
+/* mgmt */
+function renderMgmt(){
+ const V=T.viz.mgmt, L=V.labels, st=S.viz.mgmt.step, pl=S.viz.mgmt.place;
+ const hub1=[ "active","active","down","down","down","standby"][st], hub2=["standby","down","standby","failover","active","active"][st];
+ const chip=(x,y,v)=>`<rect x="${x}" y="${y}" width="86" height="22" rx="11" class="chip-${v}"/>`+txt(x+43,y+15,L[v],"s chipt");
+ let g="";
+ const hub=(x,name,v)=>box(x,60,270,110,v==="down"?"zone down":"zone")+txt(x+16,86,name,"h","start")+chip(x+16,100,v)+txt(x+16,152,"mgmt_ha = "+v,"mono","start");
+ g+=hub(30,L.hub1,hub1)+hub(460,L.hub2,hub2);
+ g+=box(30,210,270,46,"nd")+txt(165,238,L.s3+" · DC1")+box(460,210,270,46,"nd")+txt(595,238,L.s3+" · DC2");
+ g+=box(280,290,200,44,"nd")+txt(380,317,L.clusters);
+ // arrows per step
+ const bk1=path("M300 140C380 140 480 180 480 210","acc"), rs2=path("M595 210V170","dim dashed"), bk2=path("M460 140C380 140 280 180 280 210","acc"), rs1=path("M165 210V170","dim dashed");
+ const rsAll=path("M595 210V170","acc");
+ const lk1=path("M280 312L165 170","dim"), lk2=path("M480 312L595 170","dim"), lkNone=path("M380 290V250","dim dashed");
+ const lbl1=txt(430,172,L.backup,"s"), lbl2=txt(330,172,L.backup,"s"), lr2=txt(630,192,L.restore,"s","start"), lr1=txt(200,192,L.restore,"s","start");
+ if(st===0) g+=bk1+lbl1+rs2+lr2+lk1;
+ if(st===1) g+=bk1+lbl1+lk1;
+ if(st===2) g+=lkNone;
+ if(st===3) g+=rsAll+lr2+lkNone;
+ if(st===4) g+=bk2+lbl2+lk2;
+ if(st===5) g+=bk2+lbl2+rs1+lr1+lk2;
+ const stp=V.steps[st];
+ const nav=`<div class="controls"><button class="btn" id="mPrev" ${st===0?"disabled":""}>← ${esc(V.prev)}</button><span class="pill info">${esc(fmt(V.step,{n:st+1}))}</span><button class="btn" id="mNext" ${st===5?"disabled":""}>${esc(V.next)} →</button></div>`;
+ const status=`<div class="kv"><div><span>${esc(V.status.backup)}</span>${esc(V.vals.backup[st])}</div><div><span>${esc(V.status.trigger)}</span>${esc(V.vals.trigger[st])}</div><div><span>${esc(V.status.risk)}</span>${esc(V.vals.risk[st])}</div></div>`;
+ const place=`<div><h4>${esc(V.placement.title)}</h4><div class="seg wrap-seg" data-vkey="place">${Object.entries(V.placement.opts).map(([k,v])=>`<button data-val="${k}" class="${k===pl?"on":""}">${esc(v)}</button>`).join("")}</div><p style="font-size:.9rem;margin-top:6px">${esc(V.placement.impact[pl])}</p></div>`;
+ $("#vizMgmt").innerHTML=`<div><h3>${esc(V.title)}</h3><p class="lead" style="font-size:.92rem">${esc(V.lead)}</p></div>${nav}<div class="sim"><div class="vizwrap">${svgWrap(350,g,V.title)}</div><div class="verdict ${st===2?"crit":st===3?"warn":"good"}"><strong>${esc(stp.t)}</strong><span>${esc(stp.d)}</span></div></div>${status}${place}`;
+}
+
+/* virt */
+function renderVirt(){
+ const V=T.viz.virt, TL=V.tl, s=S.viz.virt;
+ const def=[["detect",50],["tolerate",300],["graceful",360],["start",60]];
+ const yours=[["detect",s.detect],["tolerate",s.tolerate],[s.fencing?"fence":"graceful",s.fencing?30:360],["start",60]];
+ const tot=a=>a.reduce((n,x)=>n+x[1],0), max=Math.max(tot(def),tot(yours));
+ const X0=150,X1=736, sx=v=>X0+(v/max)*(X1-X0);
+ const cls={detect:"c1",tolerate:"c2",fence:"c3",graceful:"c4",start:"c5"};
+ const row=(y,name,segs)=>{let x=0,g=txt(X0-10,y+22,name,"h","end");segs.forEach(([k,v])=>{const w=sx(x+v)-sx(x);g+=`<rect x="${sx(x)}" y="${y}" width="${w}" height="32" class="seg-${cls[k]}"/>`;if(w>58)g+=txt(sx(x)+w/2,y+21,`${v} ${TL.sec}`,"s on");x+=v;});const t=tot(segs);g+=txt(X1,y-6,`${TL.total}: ${t>=120?(t/60).toFixed(1)+" "+TL.min:t+" "+TL.sec}`,"s tot","end");return g;};
+ let g=row(44,TL.rows.def,def)+row(110,TL.rows.yours,yours);
+ const ticks=[0,120,300,600].filter(v=>v<=max); ticks.forEach(v=>{g+=`<line x1="${sx(v)}" y1="30" x2="${sx(v)}" y2="150" class="grid"/>`+txt(sx(v),166,v>=60?(v/60)+" "+TL.min:v+" "+TL.sec,"s ax");});
+ const legend=`<div class="legend">${Object.entries(TL.phases).map(([k,v])=>`<span><i class="seg-${cls[k]}"></i>${esc(v)}</span>`).join("")}</div>`;
+ const ctl=`<div class="controls"><label class="ctl"><span>${esc(TL.sliders.detect)}: <b>${s.detect} s</b></span><input type="range" id="vDetect" min="10" max="50" step="5" value="${s.detect}"></label>
+  <label class="ctl"><span>${esc(TL.sliders.tolerate)}: <b>${s.tolerate} s</b></span><input type="range" id="vTol" min="0" max="300" step="10" value="${s.tolerate}"></label>
+  <button class="btn ${s.fencing?"":"on"}" id="vFence">${esc(TL.sliders.fencing)}: ${s.fencing?"ON":"OFF"}</button></div>`;
+ const warn=s.fencing?"":`<div class="verdict crit">${esc(TL.stuck)}</div>`;
+ const vm=`<div><h4>${esc(V.vmsc.title)}</h4><div class="cmp"><div class="cmph">${esc(V.vmsc.left)}</div><div class="cmph">${esc(V.vmsc.right)}</div>${V.vmsc.rows.map(r=>`<div>${esc(r[0])}</div><div class="acc">${esc(r[1])}</div>`).join("")}</div></div>`;
+ const fit=Math.min(s.vms,Math.floor(s.vms*s.cap/100)), wait=s.vms-fit;
+ const storm=`<div><h4>${esc(V.storm.title)}</h4><div class="controls"><label class="ctl"><span>${esc(V.storm.vms)}: <b>${s.vms}</b></span><input type="range" id="vVms" min="10" max="500" step="10" value="${s.vms}"></label><label class="ctl"><span>${esc(V.storm.cap)}: <b>${s.cap} %</b></span><input type="range" id="vCap" min="10" max="100" step="5" value="${s.cap}"></label></div>
+  <div class="bar"><i style="width:${fit/s.vms*100}%"></i></div><div class="verdict ${wait?"crit":"good"}">${esc(fmt(V.storm.fit,{n:fit,m:wait}))}. ${esc(wait?fmt(V.storm.over,{m:wait}):V.storm.ok)}</div></div>`;
+ $("#vizVirt").innerHTML=`<div><h3>${esc(V.title)}</h3><p class="lead" style="font-size:.92rem">${esc(V.lead)}</p></div>${ctl}<div class="vizwrap">${svgWrap(178,g,V.title)}</div>${legend}${warn}${vm}${storm}`;
+}
+
+function renderVizAll(){renderStorage();renderTraffic();renderMgmt();renderVirt();}
+const _renderAll=renderAll; renderAll=function(){_renderAll();renderVizAll();};
+document.addEventListener("click",e=>{
+ const sg=e.target.closest(".seg[data-vkey] button"); if(sg){const k=sg.parentElement.dataset.vkey,v=sg.dataset.val; if(k==="storage")S.viz.storage=v; if(k==="ew")S.viz.traffic.ew=v; if(k==="place")S.viz.mgmt.place=v; saveViz(); if(k==="storage")renderStorage(); else if(k==="ew")renderTraffic(); else renderMgmt(); return;}
+ if(e.target.id==="tFail"){trafficFail();return;}
+ const dep=e.target.closest("[data-dep]"); if(dep){const i=+dep.dataset.dep; S.viz.traffic.missing.has(i)?S.viz.traffic.missing.delete(i):S.viz.traffic.missing.add(i); renderTraffic(); return;}
+ if(e.target.id==="mNext"){S.viz.mgmt.step=Math.min(5,S.viz.mgmt.step+1);saveViz();renderMgmt();return;}
+ if(e.target.id==="mPrev"){S.viz.mgmt.step=Math.max(0,S.viz.mgmt.step-1);saveViz();renderMgmt();return;}
+ if(e.target.id==="vFence"){S.viz.virt.fencing=!S.viz.virt.fencing;saveViz();renderVirt();return;}
+ const go=e.target.closest("[data-goto]"); if(go){const map={D:"regional",E:"metro",C:"odfstretch",G:"oadp",F:"app",A:"array",B:"array"}; if(map[go.dataset.goto]){S.viz.storage=map[go.dataset.goto];saveViz();renderStorage();}}
+});
+const SL={tHc:["traffic","hc"," s"],tTtl:["traffic","ttl"," s"],vDetect:["virt","detect"," s"],vTol:["virt","tolerate"," s"],vVms:["virt","vms",""],vCap:["virt","cap"," %"]};
+document.addEventListener("input",e=>{const m=SL[e.target.id]; if(!m) return; S.viz[m[0]][m[1]]=+e.target.value; const b=e.target.parentElement.querySelector("b"); if(b) b.textContent=e.target.value+m[2];});
+document.addEventListener("change",e=>{const m=SL[e.target.id]; if(!m) return; S.viz[m[0]][m[1]]=+e.target.value; saveViz(); if(m[0]==="traffic") renderTraffic(); else renderVirt();});
+renderVizAll();
 
 </script>
 </body>
