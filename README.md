@@ -80,31 +80,4 @@ python3 -m http.server 8080
 
 Fonts load from Google Fonts; without internet the app falls back to system fonts. The selected language, configurator answers and checklist state are stored in the browser's `localStorage` only.
 
-## Deploy to GitHub Pages
 
-With the GitHub CLI (`gh auth login` done once):
-
-```bash
-cd ~/Develops/openshift-ha-two-dc
-git init -b main
-git add .
-git commit -m "OpenShift Two-DC Explorer, as of 2026-10-18"
-gh repo create chytrik/openshift-ha-two-dc --public --source=. --remote=origin --push \
-  --description "Interactive guide: OpenShift HA across two data centers (CS/SK/PL/RO/EN)"
-gh api -X POST repos/chytrik/openshift-ha-two-dc/pages -f "source[branch]=main" -f "source[path]=/"
-gh api repos/chytrik/openshift-ha-two-dc/pages --jq .html_url
-```
-
-Or in the web UI: **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main`, folder `/ (root)` → Save**. The site is live at `https://chytrik.github.io/openshift-ha-two-dc/` after the first Pages build (usually a minute or two).
-
-Deep links to sections work with a plain anchor, e.g. `#config`, `#variants`, `#virt`.
-
-## Updating the content
-
-1. Edit `index.html` (texts for all five languages live in the `I18N` object).
-2. Update the **as-of date** in two places: the `footer` string of each language in `index.html`, and the notice at the top of this README.
-3. Commit and push; GitHub Pages redeploys automatically.
-
-## Author
-
-Patrik Plachý, Senior Solution Architect, Red Hat. Questions about your own environment: contact your Red Hat account team.
