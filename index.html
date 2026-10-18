@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Interactive guide (CS/SK/PL/RO/EN) to running Red Hat OpenShift with high availability across two data centers. As of 18 October 2026.">
+<meta property="og:title" content="OpenShift Two-DC Explorer">
+<meta property="og:description" content="etcd quorum simulator, architecture options A–G, configurator and discovery checklist for OpenShift across two data centers.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b3271d'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='14' text-anchor='middle' fill='white'%3E2DC%3C/text%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>OpenShift Two-DC Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky top bar with language + section tabs; one column of sections, each a working panel; max 1080px. */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --surface2:#e9edf2; --fg:#182030; --muted:#5a6475; --line:#d3d9e2;
+  --accent:#b3271d; --accent-soft:#b3271d1a; --good:#2a7a4b; --good-soft:#2a7a4b1a; --warn:#b06f12; --warn-soft:#b06f121f; --crit:#b3271d; --crit-soft:#b3271d1a; --info:#2b5fa8; --info-soft:#2b5fa81a;
+  --display:"Manrope",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#121620; --surface:#1a1f2a; --surface2:#222837; --fg:#e7eaf0; --muted:#9aa4b6; --line:#2d3444; --accent:#e4584d; --accent-soft:#e4584d24; --good:#4cae76; --good-soft:#4cae7624; --warn:#d9953a; --warn-soft:#d9953a24; --crit:#e4584d; --crit-soft:#e4584d24; --info:#6c9ae0; --info-soft:#6c9ae024; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#121620; --surface:#1a1f2a; --surface2:#222837; --fg:#e7eaf0; --muted:#9aa4b6; --line:#2d3444; --accent:#e4584d; --accent-soft:#e4584d24; --good:#4cae76; --good-soft:#4cae7624; --warn:#d9953a; --warn-soft:#d9953a24; --crit:#e4584d; --crit-soft:#e4584d24; --info:#6c9ae0; --info-soft:#6c9ae024; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--info)}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.5rem;font-weight:800}
+h3{font-size:1.1rem;font-weight:700}
+h4{font-size:.95rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.topin{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:800;font-size:1rem;letter-spacing:.02em;white-space:nowrap}
+.brand b{color:var(--accent)}
+.tabs{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:transparent;color:var(--muted);font:inherit;font-size:.85rem;font-weight:500;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.tab:hover{background:var(--surface2);color:var(--fg)}
+.tab.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.tab:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.langs{display:flex;gap:2px;border:1px solid var(--line);border-radius:8px;padding:2px;margin-left:auto}
+.lang{border:0;background:transparent;font:inherit;font-family:var(--mono);font-size:.75rem;padding:4px 7px;border-radius:6px;cursor:pointer;color:var(--muted)}
+.lang.active{background:var(--fg);color:var(--bg)}
+main{padding-block:24px 64px;display:grid;gap:40px}
+section{scroll-margin-top:84px;display:grid;gap:18px}
+.kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lead{color:var(--muted);max-width:68ch;font-size:1.02rem}
+.hero{display:grid;gap:10px;padding-block:8px 4px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.cell{background:var(--surface2);border-radius:10px;padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
+.cell ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.72rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.crit{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.pill.info{background:var(--info-soft);color:var(--info);border-color:transparent}
+.pill.rec{background:var(--accent-soft);color:var(--accent);border-color:transparent;font-weight:500}
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+label.ctl{display:grid;gap:4px;font-size:.8rem;color:var(--muted)}
+select,input[type=range]{font:inherit}
+select{background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.9rem}
+.btn{font:inherit;font-size:.85rem;font-weight:500;border:1px solid var(--line);background:var(--surface2);color:var(--fg);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.on{background:var(--crit-soft);border-color:var(--crit);color:var(--crit)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:.85rem;border:0;background:var(--surface2);color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--fg);color:var(--bg);font-weight:600}
+/* simulator */
+.sim{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:860px){.sim{grid-template-columns:3fr 2fr}}
+.sites{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.sites{grid-template-columns:1fr}}
+.site{border:2px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;cursor:pointer;background:var(--surface2);transition:border-color .15s,opacity .15s;min-height:150px;align-content:start;user-select:none}
+.site:hover{border-color:var(--muted)}
+.site.failed{border-color:var(--crit);background:var(--crit-soft)}
+.site.isolated{border-style:dashed;border-color:var(--warn);background:var(--warn-soft)}
+.site.empty{opacity:.55;cursor:default;border-style:dashed}
+.site h4{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.nodes{display:flex;flex-wrap:wrap;gap:6px}
+.node{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-size:.68rem;font-weight:500;background:var(--surface);border:1px solid var(--line);color:var(--fg)}
+.node.cp{border-color:var(--info);color:var(--info);background:var(--info-soft)}
+.node.arb{border-color:var(--good);color:var(--good);background:var(--good-soft)}
+.node.dead{opacity:.35;text-decoration:line-through}
+.node.orphan{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.site small{color:var(--muted);font-size:.75rem}
+.link{grid-column:1/-1;font-family:var(--mono);font-size:.72rem;color:var(--muted);text-align:center}
+.stats{display:grid;gap:8px}
+.stat{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--surface2);font-size:.9rem}
+.stat b{font-family:var(--mono);font-weight:500;font-size:.85rem}
+.verdict{border-left:4px solid var(--line);padding:10px 12px;border-radius:0 8px 8px 0;background:var(--surface2);display:grid;gap:4px;font-size:.92rem}
+.verdict.good{border-color:var(--good)}.verdict.warn{border-color:var(--warn)}.verdict.crit{border-color:var(--crit)}
+.verdict.info{border-color:var(--info)}
+/* variants */
+.vcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.vcard{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;cursor:pointer;background:var(--surface);align-content:start}
+.vcard:hover{border-color:var(--muted)}
+.vcard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.vcard .id{font-family:var(--display);font-weight:800;font-size:1.4rem;line-height:1;color:var(--accent)}
+.vcard small{color:var(--muted);font-size:.8rem}
+.detail{display:grid;gap:12px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.kv div{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:.85rem;display:grid;gap:2px}
+.kv span{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:720px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+tr.hl td{background:var(--accent-soft)}
+.mapwrap{overflow-x:auto}
+svg.map{width:100%;max-width:100%;height:auto;display:block}
+svg.map text{font-family:var(--body);fill:var(--fg)}
+svg.map .ax{fill:var(--muted);font-family:var(--mono);font-size:10px}
+svg.map .dot{cursor:pointer}
+svg.map .dot circle{fill:var(--surface);stroke:var(--info);stroke-width:2}
+svg.map .dot.sel circle{fill:var(--accent);stroke:var(--accent)}
+svg.map .dot text{font-size:11px;font-weight:600}
+svg.map .grid{stroke:var(--line);stroke-width:1}
+/* configurator */
+.cfg{display:grid;gap:14px}
+@media (min-width:860px){.cfg{grid-template-columns:2fr 3fr}}
+.q{display:grid;gap:6px}
+.q .lbl{font-size:.85rem;font-weight:600}
+.range{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.range output{font-family:var(--mono);font-size:.85rem;min-width:5ch;text-align:right}
+.res{display:grid;gap:12px;align-content:start}
+.primary{border:2px solid var(--accent);border-radius:12px;padding:14px;display:grid;gap:8px;background:var(--accent-soft)}
+.primary .id{font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--accent);line-height:1}
+.list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.list li{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;font-size:.9rem}
+.list li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted);margin-top:7px}
+.list.warn li::before{background:var(--warn)}
+.list.crit li::before{background:var(--crit)}
+.list.good li::before{background:var(--good)}
+.list.info li::before{background:var(--info)}
+/* checklist */
+.check{display:grid;gap:6px}
+.check label{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:8px 10px;border-radius:8px;background:var(--surface2);font-size:.9rem;cursor:pointer}
+.check input{margin-top:4px;accent-color:var(--accent)}
+.check label.done{opacity:.55;text-decoration:line-through}
+.check .key{border-left:3px solid var(--accent)}
+.progress{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.src{display:grid;gap:6px;margin:0;padding-left:18px;font-size:.88rem}
+footer{color:var(--muted);font-size:.78rem;padding-block:20px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topin">
+  <div class="brand">OpenShift <b>2×DC</b></div>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="langs" id="langs"></div>
+</div></header>
+
+<main class="wrap" id="main">
+  <div class="hero">
+    <div class="kicker" data-i18n="hero.kicker"></div>
+    <h1 data-i18n="hero.title"></h1>
+    <p class="lead" data-i18n="hero.lead"></p>
+  </div>
+
+  <section id="principle">
+    <div><div class="kicker" data-i18n="nav.principle"></div><h2 data-i18n="principle.title"></h2></div>
+    <p class="lead" data-i18n="principle.lead"></p>
+    <div class="panel" id="simPanel">
+      <div><h3 data-i18n="sim.title"></h3><p class="lead" style="font-size:.92rem" data-i18n="sim.lead"></p></div>
+      <div class="controls">
+        <label class="ctl"><span data-i18n="sim.topology"></span><select id="topo"></select></label>
+        <button class="btn" id="isolate"></button>
+        <button class="btn" id="reset"></button>
+        <span class="pill" data-i18n="sim.hint"></span>
+      </div>
+      <div class="sim">
+        <div class="sites" id="sites"></div>
+        <div class="stats" id="stats"></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel" id="hadr"></div>
+      <div class="panel" id="drtwo"></div>
+    </div>
+    <div class="panel" id="disposable"></div>
+    <div class="panel" id="blast"></div>
+  </section>
+
+  <section id="variants">
+    <div><div class="kicker" data-i18n="nav.variants"></div><h2 data-i18n="variants.title"></h2></div>
+    <p class="lead" data-i18n="variants.lead"></p>
+    <div class="vcards" id="vcards"></div>
+    <div class="panel detail" id="vdetail"></div>
+    <div class="panel">
+      <div><h3 data-i18n="variants.map.title"></h3><p class="lead" style="font-size:.92rem" data-i18n="variants.map.lead"></p></div>
+      <div class="mapwrap" id="rpomap"></div>
+    </div>
+    <div class="panel"><h3 data-i18n="variants.tableTitle"></h3><div class="tablewrap" id="vtable"></div></div>
+  </section>
+
+  <section id="config">
+    <div><div class="kicker" data-i18n="nav.config"></div><h2 data-i18n="config.title"></h2></div>
+    <p class="lead" data-i18n="config.lead"></p>
+    <div class="panel cfg">
+      <div class="q-list" id="questions" style="display:grid;gap:14px"></div>
+      <div class="res" id="result"></div>
+    </div>
+  </section>
+
+  <section id="data"><div><div class="kicker" data-i18n="nav.data"></div><h2 data-i18n="data.title"></h2></div><p class="lead" data-i18n="data.lead"></p><div class="grid3" id="dataItems"></div></section>
+  <section id="traffic"><div><div class="kicker" data-i18n="nav.traffic"></div><h2 data-i18n="traffic.title"></h2></div><p class="lead" data-i18n="traffic.lead"></p><div class="grid3" id="trafficItems"></div></section>
+  <section id="mgmt"><div><div class="kicker" data-i18n="nav.mgmt"></div><h2 data-i18n="mgmt.title"></h2></div><p class="lead" data-i18n="mgmt.lead"></p><div class="grid3" id="mgmtItems"></div></section>
+  <section id="virt"><div><div class="kicker" data-i18n="nav.virt"></div><h2 data-i18n="virt.title"></h2></div><p class="lead" data-i18n="virt.lead"></p><div class="grid3" id="virtItems"></div></section>
+
+  <section id="discovery">
+    <div><div class="kicker" data-i18n="nav.discovery"></div><h2 data-i18n="discovery.title"></h2></div>
+    <p class="lead" data-i18n="discovery.lead"></p>
+    <div class="panel"><div class="progress" id="progress"></div><div class="check" id="checklist"></div></div>
+  </section>
+
+  <section id="sources">
+    <div><div class="kicker" data-i18n="nav.sources"></div><h2 data-i18n="sources.title"></h2></div>
+    <p class="lead" data-i18n="sources.lead"></p>
+    <div class="grid2" id="srcGroups"></div>
+  </section>
+
+  <footer data-i18n="footer"></footer>
+</main>
+<script>
+const I18N = {};
+I18N.en = {
+nav:{principle:"The problem",variants:"Options",config:"Configurator",data:"Data & storage",traffic:"Traffic",mgmt:"Management",virt:"Virtualization",discovery:"Discovery",sources:"Sources"},
+hero:{kicker:"Interactive guide",title:"OpenShift high availability across two data centers",lead:"What a cluster stretched across two sites can and cannot do, why the third location matters, and which architecture fits your RPO, data and workloads. Try the simulator, then let the configurator pick an option."},
+footer:"As of 18 October 2026. Informational material, not an official Red Hat support statement; product capabilities change between releases, so verify against current documentation. Based on Red Hat documentation (OCP 4.21 etcd guidance, ODF 4.18 DR, ACM) and Red Hat blog posts. RPO/RTO values are typical ranges; measure them in your own test.",
+principle:{
+ title:"Why two sites are not enough for one cluster",
+ lead:"OpenShift keeps its state in etcd, which needs a majority of its members to agree. Split across two sites, one site always holds the majority. Lose that site and the control plane stops writing.",
+ hadr:{title:"HA is not DR",body:"HA covers the failure of a component inside one failure domain and recovers automatically. DR covers the loss of a whole domain (a data center) and is measured in RPO (data lost) and RTO (time down). Three control plane nodes in one DC are HA, not DR."},
+ drtwo:{title:"DR is two problems",body:"Red Hat does not try to protect the cluster itself. It protects the continuity of applications by failing them over to another cluster. That means solving traffic routing and data replication. Stateless apps need only the first; stateful apps need both."},
+ disposable:{title:"The cluster is disposable, the data is not",lead:"Kubernetes assumes a cluster can be rebuilt. With GitOps every cluster, operator and application is reproducible from Git. What cannot be rebuilt from Git is application state. Design DR around that.",
+  cols:[{h:"Rebuildable from Git",items:["Cluster install config and day-2 operators","Namespaces, Deployments, Routes, Policies","Secrets and config via Vault / sealed secrets","ACM placements, DR overlays"]},
+        {h:"Must be protected",items:["Databases (in or outside OpenShift)","Persistent volumes and VM disks","Message logs (Kafka), object storage","Certificates, keys, IdP state"]},
+        {h:"Consequence",items:["Spend the HA budget on data replication, not on stretching the control plane","A second cluster built from Git is cheaper to trust than a stretched one","Backups must exist beside replication: replication copies corruption too"]}]},
+ blast:{title:"Blast radius",body:"A stretched cluster merges both data centers into one failure domain. A bad upgrade, a broken MachineConfig, expired certificates or corrupted etcd hit both sites at once. Two clusters isolate those faults and let you upgrade one as a canary. A network partition is worse than a clean outage: pods in the isolated site keep running without control, so stateful pods and VMs need fencing before they can be restarted elsewhere."}
+},
+sim:{
+ title:"etcd quorum simulator",lead:"Pick a topology and click a site to take it down. Watch what happens to the API and the workloads.",
+ topology:"Topology",topos:{"2+1":"Stretched 2+1 (3 control plane)","1+1+1":"Stretched 1+1+1 (third site)","2+2":"Stretched 2+2 (bare metal)","3+2":"Stretched 3+2 (bare metal)","two":"Two independent clusters"},
+ sites:{dc1:"Data center 1",dc2:"Data center 2",s3:"Third site"},hint:"Click a site to fail it",isolate:"Cut the DC1–DC2 link",isolateOn:"Link cut (DC2 isolated)",reset:"Reset",cp:"CP",workers:"workers",cluster:"Cluster",none:"not used",
+ stats:{members:"etcd members alive",quorum:"Quorum needed",api:"Kubernetes API",workloads:"Workloads",recovery:"Recovery"},
+ api:{rw:"read/write",ro:"read-only",down:"down"},
+ out:{
+  ok:"Healthy. All sites up, API writes, the scheduler can move pods.",
+  minor:"Quorum kept. Pods from the lost site are rescheduled to the surviving site after node timeouts (about 5 min by default). RWO volumes and VMs need fencing first.",
+  major:"Quorum lost. The API is read-only: running pods keep running, but nothing can be rescheduled, scaled or updated. An admin must run quorum-restore.sh on a surviving node; the last writes may be lost. {copies} etcd copy/copies remain.",
+  all:"All sites down. Restore from etcd backup or rebuild the cluster from Git.",
+  partition:"Partition. DC1 keeps quorum and after timeouts reschedules DC2 pods, while DC2 pods are still running without control. Without fencing a stateful pod or VM can run twice on the same replicated volume.",
+  partitionMajorLost:"Partition. DC2 is isolated and DC1 has no quorum: API read-only on both sides. Manual recovery either way.",
+  partition111:"Partition. The third site breaks the tie: whichever DC it still reaches keeps quorum. The isolated DC keeps running pods without control, so fencing is required.",
+  twoOk:"Both clusters healthy. GSLB sends traffic to both (or to the active one). Data replicate between them.",
+  twoLost:"Cluster in {site} is down. The other cluster is unaffected. GSLB redirects traffic; stateful apps fail over via ACM, with RPO set by the replication type (see the configurator).",
+  twoPartition:"Link cut. Each cluster keeps running on its own. Replication pauses; failover needs the ACM hub to be reachable from the surviving side.",
+  recoverNone:"none needed",recoverAuto:"automatic",recoverManual:"manual: quorum-restore.sh, then rebuild lost nodes",recoverFailover:"ACM failover (manual trigger), GSLB",recoverBackup:"etcd backup or rebuild from Git"
+ }
+},
+variants:{
+ title:"Seven ways to run OpenShift across two data centers",lead:"Click a card for details. A and B stretch one cluster without a third site, C stretches it with one, D to G use two independent clusters.",tableTitle:"Side by side",
+ cols:{dcLoss:"Loss of a whole DC",rpo:"RPO",rto:"RTO",site3:"Third site",latency:"Latency between DCs",verdict:"Verdict"},
+ map:{title:"RPO and RTO map",lead:"Where each option lands. Lower-left is better; only C and E reach RPO 0 with automated recovery, and both need a third site.",rpo:"RPO (data lost)",rto:"RTO (time to recover)",scale:["0","seconds","minutes","hours"]},
+ items:[
+  {id:"A",name:"Stretched 2+1",short:"One cluster, two control plane nodes in DC1, one in DC2",dcLoss:"DC2 loss: fine. DC1 loss: API read-only",rpo:"etcd: last writes at risk; data: per storage",rto:"Manual, depends on runbook",site3:"No",latency:"etcd peer RTT < 100 ms (recommended < 5 ms); with ODF < 10 ms",verdict:"Not recommended",tone:"crit",
+   detail:["Supported by Red Hat, but documented as a single failure domain that must not replace a DR plan.","Losing the majority site puts the API into read-only. Recovery is quorum-restore.sh on the last node in DC2, with the risk of losing writes not yet replicated there.","Requires direct IP connectivity, uniform MTU and VIPs for API and ingress; separate L3 networks need an external load balancer.","Every disruption (partition, MTU mismatch, latency spike, jitter) must be tested before production."]},
+  {id:"B",name:"Stretched 2+2 or 3+2",short:"Four or five control plane nodes, bare metal only, OCP 4.17+",dcLoss:"Same as A, but two etcd copies survive",rpo:"Same as A, lower risk",rto:"Manual",site3:"No",latency:"Same as A; bare metal only",verdict:"Compromise for VMs without a third site",tone:"warn",
+   detail:["Red Hat added 4 and 5 node control planes for two-site VM deployments on bare metal.","Quorum is still lost when a DC fails, but the surviving site keeps two read-only etcd copies, so manual recovery has a fallback.","Deployed as 3 nodes and scaled up on day 2 (Assisted or Agent-based installer).","More control plane nodes slightly reduce throughput and increase latency."]},
+  {id:"C",name:"Stretched 1+1+1",short:"One cluster, one control plane node per site, third site hosts the tie-breaker",dcLoss:"Control plane survives automatically",rpo:"0 with synchronous storage",rto:"Minutes: RWX pods ~6–8 min, RWO and VMs after fencing",site3:"Yes, a full control plane node",latency:"Data zones < 10 ms (ODF); arbiter follows etcd limits",verdict:"Only with a third site, plus a DR plan",tone:"good",
+   detail:["The topology Red Hat recommends for a spanned cluster: one control plane member per site, three sites.","With ODF stretch cluster (two data zones + arbiter zone) or a metro storage array, data have RPO 0.","It is still one failure domain: upgrades, config errors and certificate expiry hit both DCs. Keep OADP backups off-cluster or a second cluster.","The third site needs a real node, not a lightweight witness: standard clusters have no etcd-only arbiter (Two-Node with Arbiter is an edge topology limited to two workers)."]},
+  {id:"D",name:"Two clusters + Regional-DR",short:"Independent clusters, asynchronous volume replication (ODF, array or application)",dcLoss:"Application failover via ACM",rpo:"> 0: replication interval (from 1 min) and change rate",rto:"Minutes, manually triggered",site3:"No (hub ideally neutral)",latency:"No limit",verdict:"Default for stateful data without a third site",tone:"good",
+   detail:["ODF Regional-DR mirrors RBD volumes asynchronously between two ODF clusters; ACM orchestrates failover and failback per application.","Requires ODF Advanced and ACM. OpenShift Platform Plus includes only ODF Essentials.","Alternatives: storage array async replication with CSI VolumeReplication, VolSync, or application-level replication (database streaming, Kafka MirrorMaker 2).","Failover is a sensitive operation and stays manual by default; Event-Driven Ansible can automate it with a guard against false triggers."]},
+  {id:"E",name:"Two clusters + Metro-DR",short:"Independent clusters over an external Ceph stretch cluster with an arbiter",dcLoss:"Application failover via ACM",rpo:"0",rto:"Minutes",site3:"Yes, Ceph arbiter (~100 ms RTT)",latency:"< 10 ms",verdict:"RPO 0 with two clusters",tone:"good",
+   detail:["External Red Hat Ceph Storage stretched across both DCs with synchronous replication; the monitor arbiter sits at a third location up to ~100 ms away.","All-flash only, erasure coding not supported, one DRPolicy per solution.","Hub recovery for Metro-DR is Technology Preview in ODF 4.18.","Equivalent with a metro storage array: synchronous replication plus a witness, failover automation depending on the vendor's CSI support."]},
+  {id:"F",name:"Two clusters active/active",short:"GSLB sends traffic to both clusters at once",dcLoss:"GSLB redirects traffic",rpo:"Stateless 0; stateful per application",rto:"Seconds to minutes (health check + DNS TTL)",site3:"No (consensus databases: yes)",latency:"Per application",verdict:"Default for stateless",tone:"good",
+   detail:["Both clusters serve traffic; the global load balancer health-checks a route in each cluster.","Stateful data are replicated by the application itself: database replication, Kafka MirrorMaker 2, or a database outside OpenShift.","Consensus databases (CockroachDB, YugabyteDB) need three failure domains, exactly like etcd. Two DCs are not enough for them.","Both clusters need the same platform dependencies: IdP, registry, Git, Vault, S3, monitoring."]},
+  {id:"G",name:"Two clusters + backup/restore",short:"OADP backups to object storage, restore on the other cluster",dcLoss:"Restore from backup",rpo:"Backup frequency",rto:"Hours",site3:"No",latency:"No limit",verdict:"Complement, not primary DR",tone:"info",
+   detail:["OADP (Velero) backs up Kubernetes objects and persistent volumes (CSI snapshot + data mover) to S3.","Red Hat does not recommend backups as the only DR strategy: restores are rare, slow and under-tested.","Backups belong beside every other option: replication copies logical corruption and deletions too.","DORA Article 12 requires restoring into physically and logically separated systems and periodic restore tests."]}
+ ]
+},
+config:{
+ title:"Which option fits you?",lead:"Answer six questions. The recommendation follows the decision tree from the report: where the data live, the RPO you need, the third site, latency, platform and whether one cluster is mandatory.",
+ q:{
+  stateful:{label:"Where do the stateful data live?",opts:{pv:"Persistent volumes in OpenShift",vm:"Virtual machines (OpenShift Virtualization)",ext:"Outside OpenShift (external DB, mainframe)"}},
+  rpo:{label:"What RPO do critical apps need?",opts:{zero:"Zero data loss",min:"Minutes",hour:"Hours (backup is enough)"}},
+  site3:{label:"Is a third location available?",yes:"Yes (a room, a branch, a cloud tenant)",no:"No"},
+  latency:{label:"Round-trip latency between the DCs"},
+  platform:{label:"Platform",opts:{bm:"Bare metal",vs:"vSphere",other:"Other / cloud"}},
+  single:{label:"Does it have to be a single cluster?",yes:"Yes, the customer insists",no:"No, two clusters are acceptable"}
+ },
+ result:{title:"Recommendation",primary:"Primary option",also:"Combine with",warnings:"Watch out",needs:"You will need",always:"Always: OADP backups off-cluster, GSLB, resilient ACM hub, regular DR tests."},
+ texts:{
+  extF:"Stateful data are outside OpenShift, so OpenShift carries the stateless layer. Run two clusters active/active behind GSLB and let the database own its DR (e.g. Data Guard, Always On).",
+  minD:"RPO in minutes is reachable without a third site. Two clusters with Regional-DR, array async replication or application-level replication; failover per application via ACM.",
+  hourG:"Backups satisfy the RPO. Two clusters built from Git, OADP backups to S3 reachable from both DCs, restore on the surviving cluster.",
+  zeroNoSiteSingleBm:"RPO 0, no third site and one cluster required: stretched 3+2 on bare metal is the least bad option. Quorum is still lost with the majority DC; two surviving etcd copies make manual recovery safer.",
+  zeroNoSiteSingle:"RPO 0, no third site and one cluster required: only stretched 2+1 remains, as an accepted risk. Name the majority DC as primary and rehearse quorum-restore.sh.",
+  zeroNoSite:"RPO 0 without a third site cannot be automated safely. Use synchronous array replication with manual failover, or revisit the RPO: minutes usually unlock Regional-DR.",
+  zeroSiteSingle:"RPO 0, third site, one cluster: stretched 1+1+1 with one control plane node per site and synchronous storage (ODF stretch cluster or a metro array). Keep a DR target beside it.",
+  zeroSiteE:"RPO 0 with two clusters: Metro-DR over an external Ceph stretch cluster, arbiter at the third site. Or a metro storage array with a witness and CSI replication.",
+  alsoF:"F for stateless services (active/active behind GSLB)",alsoG:"G: OADP backups off-cluster",alsoD:"D for less critical stateful data (async, no third site needed)",alsoDR:"A DR target for the stretched cluster: a second cluster or at least off-cluster backups",
+  wLat100:"Latency above 100 ms: a stretched control plane is outside etcd limits. Only two clusters are possible.",
+  wLat10:"Latency above 10 ms: ODF stretch cluster and Metro-DR are not supported. Synchronous options need a storage array that tolerates it, or move to async.",
+  wLat5:"Latency above 5 ms: above the Red Hat recommendation for a stretched cluster. Test partitions, jitter and etcd apply times before production.",
+  wVm:"VMs run as a single instance: fencing (Node Health Check + Fence Agents Remediation) is required before a VM can restart elsewhere. Throttle restart storms and keep ~100% spare capacity in the surviving DC.",
+  wVsphere:"On vSphere with a metro storage cluster, vSphere HA may restart control plane VMs in the other DC and restore quorum without quorum-restore.sh. Test it and confirm support with Red Hat.",
+  wBmOnly:"4 or 5 control plane nodes are available only on bare metal.",
+  wConsensus:"Active/active with a consensus database needs three failure domains; with two DCs plan active/passive for that database.",
+  wHub:"ACM hub placement: at the third site, or active/passive hubs with OADP backup to S3. Without a reachable hub you cannot trigger ODF DR failover.",
+  wSingle:"A single stretched cluster is one failure domain. Upgrades and configuration errors hit both DCs; keep a rollback plan and backups off-cluster.",
+  nOdfAdv:"ODF Advanced + ACM subscriptions",nGslb:"Global load balancer (F5, Infoblox or Connectivity Link with CoreDNS)",nGit:"GitOps repository with DR overlays and a break-glass path",nS3:"S3 reachable from both DCs for OADP and ACM hub backups",nFence:"BMC with Redfish for fencing",nSite3:"A server or VM at the third site (control plane node or Ceph arbiter)",nDeps:"Platform dependencies in both DCs: DNS, NTP, IdP, registry, Git, Vault, monitoring",nTest:"Documented tests: DC loss, partition, MTU, latency spike",nArray:"Storage array with synchronous replication and CSI VolumeReplication support"
+ }
+},
+data:{title:"Data and storage decide the RPO",lead:"OpenShift does not set the achievable RPO; storage and the application do. First find out where state lives. In banks it is often in databases outside OpenShift, and OpenShift mostly carries the stateless layer.",
+ items:[{h:"ODF stretch cluster",b:"One OpenShift cluster, two data zones (< 10 ms RTT) and an arbiter zone. Needs three control plane nodes in three zones and at least four workers split evenly across the data zones."},
+  {h:"ODF Metro-DR",b:"Two clusters over an external Red Hat Ceph Storage stretch cluster. RPO 0, all-flash only, one DRPolicy, arbiter at a third location up to ~100 ms away."},
+  {h:"ODF Regional-DR",b:"Asynchronous RBD mirroring between two ODF clusters, interval from 1 minute. RPO > 0, no distance limit, failover per application via ACM."},
+  {h:"Licensing",b:"All three ODF DR options need ODF Advanced; Metro-DR and Regional-DR also need ACM. OpenShift Platform Plus includes ODF Essentials only."},
+  {h:"Storage arrays with CSI replication",b:"Hitachi GAD, NetApp, Pure, Dell, IBM. Volume replication is not standardized in CSI, so failover automation depends on the vendor: no CSI support, CSI VolumeReplication, or replication of namespace metadata too. Most metro solutions need a witness at a third location."},
+  {h:"Application-level replication",b:"Database streaming replication, Kafka MirrorMaker 2. The application knows what it replicates and reports its state. Synchronous consensus again needs three sites."},
+  {h:"VolSync (part of ACM)",b:"Asynchronous PV copies between clusters without ODF. Fits less critical data."},
+  {h:"Backups always sit beside replication",b:"Replication carries logical corruption and deletions too. DORA Article 12 requires restoring into physically and logically separated systems and periodic restore tests."}]},
+traffic:{title:"Traffic routing and connectivity",lead:"A global load balancer is mandatory for every two-cluster option; the documentation requires it for a stretched cluster too. With active/active the GSLB health check and DNS TTL define the RTO.",
+ items:[{h:"Existing GSLB",b:"F5 BIG-IP DNS, Infoblox and similar are the fastest path: a wide IP per application, health check on a route in each cluster."},
+  {h:"Red Hat Connectivity Link (Kuadrant)",b:"DNSPolicy on Gateway API manages global DNS records declaratively. CoreDNS integration for on-prem DNS is GA since 1.3 (Tech Preview in 1.1). Needs zone delegation from corporate DNS to the CoreDNS VIPs."},
+  {h:"East-west between clusters",b:"Submariner (part of ACM) at the network layer, Red Hat Service Interconnect (Skupper) at the application layer, or OpenShift Service Mesh 3 in multi-primary federation that prefers the local instance."},
+  {h:"Stretched cluster networking",b:"Direct IP connectivity between nodes, uniform MTU, on-prem VIPs (keepalived) for API and ingress that assume one L2 segment. Separate L3 networks per DC need an external load balancer."},
+  {h:"Platform dependencies in both DCs",b:"DNS, NTP, IdP (AD/LDAP), image registry (Quay or mirror), Git, Vault and S3 for backups. Otherwise the DR cluster cannot start applications even with the data in place."}]},
+mgmt:{title:"The management layer must outlive the outage",lead:"The ACM hub triggers failover through DRPlacementControl and holds placements and policies. If the hub's DC goes down, nobody can start the failover, so the hub must be more resilient than what it protects.",
+ items:[{h:"Hub placement",b:"ODF docs: active hub beside the primary cluster and a passive hub beside the secondary, or the active hub at a neutral third site. Hub recovery for Metro-DR is Technology Preview in ODF 4.18."},
+  {h:"Active/passive hub via OADP",b:"The active hub backs up to S3; the passive hub keeps restoring passive data (syncRestoreWithNewBackups, default interval 30 min). Activation data are restored only at failover. From ACM 2.7 managed clusters can reconnect automatically."},
+  {h:"A label-driven runbook",b:"A git-managed label (active / standby / failover) applied by Policy switches BackupSchedule and BackupStorageLocation between hubs. Usable as a ready-made customer runbook."},
+  {h:"GitOps as the source of truth",b:"Application state in Git, DR as an overlay over business as usual. Keep a break-glass path (oc apply -k overlays/dr) for when Git or Argo CD are unreachable."},
+  {h:"Triggering failover",b:"Red Hat keeps it manual by default. Event-Driven Ansible can call the ACM API, but the design must guard against false triggers during a partition."}]},
+virt:{title:"OpenShift Virtualization",lead:"VMs are the most common reason a customer wants a stretched cluster: they run as one instance, have no application replication and VMware habits expect a vSphere Metro Storage Cluster. The OpenShift equivalent is stretched 1+1+1 with synchronous storage, and like vMSC it needs a third site.",
+ items:[{h:"Stretched cluster for VMs",b:"Symmetric storage replication, stretched VLANs, ~5 ms latency and a witness site. The third site is required by etcd and usually hosts one control plane node. Restarted VMs have RPO 0."},
+  {h:"No safe VM move without fencing",b:"Node Health Check + Fence Agents Remediation (recommended for Virtualization) with the out-of-service taint. Untuned, rescheduling from an unreachable node takes about 12 minutes; tuned, about 1.5 minutes."},
+  {h:"Restart storm",b:"After a DC loss OpenShift reschedules all VMs at once. Control order and pace (node selectors, priorities) and keep ~100% capacity in the surviving DC."},
+  {h:"Two clusters for VMs",b:"Unidirectional array replication or ODF Regional/Metro-DR, VM state in GitOps as a DR overlay. Cross-cluster live migration (4.20, Tech Preview) is for planned moves, not DR."},
+  {h:"4–5 control plane nodes",b:"Introduced for two-site VM deployments on bare metal (2+2, 3+2). Two etcd copies survive a DC loss, but recovery stays manual."},
+  {h:"Subscriptions",b:"A stretched cluster needs both sites fully subscribed; a warm DR site may hold stopped VMs. Confirm DR capacity terms with sales."}]},
+discovery:{title:"Questions for the customer",lead:"These answers decide between the options more than anything else. The first three are key.",
+ items:[{k:1,t:"What does \"HA\" mean for you: which RPO and RTO does each application tier need, and is failover automatic or human-triggered?"},
+  {k:1,t:"Is there a third location? Do you already run a witness, mediator or tie-breaker for storage or vSAN? Could it host a server or VM for a control plane node or a Ceph arbiter?"},
+  {k:1,t:"Where do the stateful data live: databases outside OpenShift, PVs in OpenShift, or VMs?"},
+  {k:0,t:"Platform: bare metal, vSphere or other? (4–5 control plane nodes are bare metal only; on vSphere, vSphere HA and vMSC matter.)"},
+  {k:0,t:"Network between DCs: distance, RTT and jitter, bandwidth, stretched L2 yes/no, path redundancy."},
+  {k:0,t:"Storage: ODF or an array with a CSI driver? Which vendor, and does it support CSI VolumeReplication?"},
+  {k:0,t:"Existing GSLB and DNS (F5, Infoblox) and who operates them?"},
+  {k:0,t:"Platform dependencies in both DCs: IdP, registry, Git, Vault, S3, monitoring."},
+  {k:0,t:"Regulation: DORA, national regulator requirements or internal policy on separated backups and DR test frequency."},
+  {k:0,t:"Licensing: OpenShift Platform Plus, or OCP + ACM + ODF separately? ODF DR features need ODF Advanced."}],
+ progress:"{done} of {total} answered"},
+sources:{title:"Sources",lead:"Red Hat documentation and blog posts the guide is built on.",groups:{docs:"Red Hat documentation",blogs:"Red Hat blogs and articles",other:"Decks and other"}}
+};
+I18N.cs = {
+nav:{principle:"Podstata problému",variants:"Varianty",config:"Konfigurátor",data:"Data a storage",traffic:"Provoz",mgmt:"Management",virt:"Virtualizace",discovery:"Discovery",sources:"Zdroje"},
+hero:{kicker:"Interaktivní průvodce",title:"Vysoká dostupnost OpenShift napříč dvěma datovými centry",lead:"Co cluster natažený přes dvě lokality umí a neumí, proč záleží na třetí lokalitě a která architektura odpovídá vašemu RPO, datům a workloadům. Vyzkoušejte simulátor a nechte konfigurátor vybrat variantu."},
+footer:"Stav k 18. 10. 2026. Informativní materiál, nikoli oficiální stanovisko podpory Red Hat; možnosti produktů se mezi verzemi mění, ověřte je v aktuální dokumentaci. Vychází z dokumentace Red Hat (OCP 4.21 etcd guidance, ODF 4.18 DR, ACM) a blogů Red Hat. Hodnoty RPO/RTO jsou typické rozsahy; změřte je vlastním testem.",
+principle:{
+ title:"Proč dvě lokality jednomu clusteru nestačí",
+ lead:"OpenShift drží svůj stav v etcd, které potřebuje shodu většiny členů. Při rozdělení do dvou lokalit má většinu vždy jedna z nich. Když tato lokalita vypadne, control plane přestane zapisovat.",
+ hadr:{title:"HA není DR",body:"HA kryje výpadek komponenty uvnitř jedné failure domény a zotaví se automaticky. DR kryje ztrátu celé domény (datového centra) a měří se v RPO (ztracená data) a RTO (doba výpadku). Tři control plane nodes v jednom DC jsou HA, ne DR."},
+ drtwo:{title:"DR jsou dva problémy",body:"Red Hat nechrání samotný cluster. Chrání kontinuitu aplikací jejich failoverem na jiný cluster. To znamená vyřešit směrování provozu a replikaci dat. Stateless aplikace potřebují jen první, stavové obojí."},
+ disposable:{title:"Cluster je disposable, data ne",lead:"Kubernetes předpokládá, že cluster lze postavit znovu. S GitOps je každý cluster, operátor i aplikace reprodukovatelný z Gitu. Co z Gitu postavit nelze, je stav aplikací. DR navrhujte kolem něj.",
+  cols:[{h:"Postavitelné z Gitu",items:["Instalační konfigurace clusteru a day-2 operátory","Namespaces, Deployments, Routes, Policies","Secrets a konfigurace přes Vault / sealed secrets","ACM placementy, DR overlaye"]},
+        {h:"Nutné chránit",items:["Databáze (v OpenShiftu i mimo něj)","Persistent volumes a disky VM","Logy zpráv (Kafka), objektové úložiště","Certifikáty, klíče, stav IdP"]},
+        {h:"Důsledek",items:["Rozpočet na HA dejte do replikace dat, ne do natahování control plane","Druhému clusteru postavenému z Gitu se dá věřit levněji než stretched clusteru","Zálohy musí existovat vedle replikace: replikace přenese i korupci"]}]},
+ blast:{title:"Blast radius",body:"Stretched cluster spojuje obě DC do jedné failure domény. Chybný upgrade, špatná MachineConfig, expirované certifikáty nebo poškozené etcd zasáhnou obě lokality najednou. Dva clustery tyto chyby izolují a dovolí upgradovat jeden jako canary. Partition sítě je horší než čistý výpadek: pody v izolované lokalitě běží dál bez řízení, takže stavové pody a VM potřebují fencing, než je lze spustit jinde."}
+},
+sim:{
+ title:"Simulátor etcd quorum",lead:"Vyberte topologii a kliknutím na lokalitu ji vyřaďte. Sledujte, co se stane s API a workloady.",
+ topology:"Topologie",topos:{"2+1":"Stretched 2+1 (3 control plane)","1+1+1":"Stretched 1+1+1 (třetí lokalita)","2+2":"Stretched 2+2 (bare metal)","3+2":"Stretched 3+2 (bare metal)","two":"Dva nezávislé clustery"},
+ sites:{dc1:"Datové centrum 1",dc2:"Datové centrum 2",s3:"Třetí lokalita"},hint:"Kliknutím na lokalitu ji vyřadíte",isolate:"Přerušit linku DC1–DC2",isolateOn:"Linka přerušena (DC2 izolováno)",reset:"Reset",cp:"CP",workers:"workery",cluster:"Cluster",none:"nepoužita",
+ stats:{members:"Živé členy etcd",quorum:"Potřebné quorum",api:"Kubernetes API",workloads:"Workloady",recovery:"Obnova"},
+ api:{rw:"čtení/zápis",ro:"jen čtení",down:"nedostupné"},
+ out:{
+  ok:"V pořádku. Všechny lokality běží, API zapisuje, scheduler může přesouvat pody.",
+  minor:"Quorum zůstalo. Pody ze ztracené lokality se po timeoutech nodů (výchozí cca 5 min) přeplánují do přeživší lokality. RWO volumes a VM potřebují nejdřív fencing.",
+  major:"Quorum ztraceno. API je jen pro čtení: běžící pody běží dál, ale nic nelze přeplánovat, škálovat ani aktualizovat. Admin musí spustit quorum-restore.sh na přeživším nodu; poslední zápisy mohou být ztraceny. Zbývá {copies} kopie/kopií etcd.",
+  all:"Všechny lokality mimo provoz. Obnova ze zálohy etcd nebo nová stavba clusteru z Gitu.",
+  partition:"Partition. DC1 si drží quorum a po timeoutech přeplánuje pody z DC2, přitom pody v DC2 stále běží bez řízení. Bez fencingu může stavový pod nebo VM běžet dvakrát nad stejným replikovaným volume.",
+  partitionMajorLost:"Partition. DC2 je izolováno a DC1 nemá quorum: API jen pro čtení na obou stranách. Ruční obnova v každém případě.",
+  partition111:"Partition. Třetí lokalita rozhodne: quorum drží to DC, se kterým má spojení. Izolované DC dál běží pody bez řízení, fencing je nutný.",
+  twoOk:"Oba clustery v pořádku. GSLB posílá provoz do obou (nebo do aktivního). Data se mezi nimi replikují.",
+  twoLost:"Cluster v {site} je mimo provoz. Druhý cluster není dotčen. GSLB přesměruje provoz; stavové aplikace přepne ACM failover s RPO podle typu replikace (viz konfigurátor).",
+  twoPartition:"Linka přerušena. Každý cluster běží sám. Replikace se zastaví; failover potřebuje ACM hub dostupný z přeživší strany.",
+  recoverNone:"není potřeba",recoverAuto:"automatická",recoverManual:"ruční: quorum-restore.sh, pak znovu postavit ztracené nody",recoverFailover:"ACM failover (ruční spuštění), GSLB",recoverBackup:"záloha etcd nebo stavba z Gitu"
+ }
+},
+variants:{
+ title:"Sedm způsobů, jak provozovat OpenShift přes dvě DC",lead:"Klikněte na kartu pro detaily. A a B natahují jeden cluster bez třetí lokality, C s ní, D až G používají dva nezávislé clustery.",tableTitle:"Vedle sebe",
+ cols:{dcLoss:"Ztráta celého DC",rpo:"RPO",rto:"RTO",site3:"Třetí lokalita",latency:"Latence mezi DC",verdict:"Hodnocení"},
+ map:{title:"Mapa RPO a RTO",lead:"Kde která varianta leží. Vlevo dole je lépe; RPO 0 s automatizovanou obnovou dosáhnou jen C a E a obě potřebují třetí lokalitu.",rpo:"RPO (ztracená data)",rto:"RTO (doba obnovy)",scale:["0","sekundy","minuty","hodiny"]},
+ items:[
+  {id:"A",name:"Stretched 2+1",short:"Jeden cluster, dva control plane nodes v DC1, jeden v DC2",dcLoss:"Ztráta DC2: v pořádku. Ztráta DC1: API jen pro čtení",rpo:"etcd: ohroženy poslední zápisy; data podle storage",rto:"Ruční, závisí na runbooku",site3:"Ne",latency:"etcd peer RTT < 100 ms (doporučeno < 5 ms); s ODF < 10 ms",verdict:"Nedoporučeno",tone:"crit",
+   detail:["Red Hat to podporuje, ale dokumentace to popisuje jako jednu failure doménu, která nesmí nahradit DR plán.","Ztráta většinové lokality přepne API do read-only. Obnova je quorum-restore.sh na posledním nodu v DC2 s rizikem ztráty zápisů, které tam ještě nedorazily.","Vyžaduje přímou IP konektivitu, jednotné MTU a VIP pro API a ingress; oddělené L3 sítě potřebují externí load balancer.","Každé narušení (partition, nesoulad MTU, špička latence, jitter) je nutné otestovat před produkcí."]},
+  {id:"B",name:"Stretched 2+2 nebo 3+2",short:"Čtyři nebo pět control plane nodes, jen bare metal, OCP 4.17+",dcLoss:"Jako A, ale přežijí dvě kopie etcd",rpo:"Jako A, nižší riziko",rto:"Ruční",site3:"Ne",latency:"Jako A; jen bare metal",verdict:"Kompromis pro VM bez třetí lokality",tone:"warn",
+   detail:["Red Hat zavedl 4 a 5 control plane nodes právě pro dvoulokalitní VM nasazení na bare metal.","Quorum se při ztrátě DC ztratí stejně, ale v přeživší lokalitě zůstanou dvě read-only kopie etcd, takže ruční obnova má zálohu.","Nasazuje se jako 3 nody a škáluje den 2 (Assisted nebo Agent-based installer).","Více control plane nodes mírně snižuje propustnost a zvyšuje latenci."]},
+  {id:"C",name:"Stretched 1+1+1",short:"Jeden cluster, jeden control plane node na lokalitu, třetí lokalita hostí rozhodující hlas",dcLoss:"Control plane přežije automaticky",rpo:"0 se synchronním storage",rto:"Minuty: RWX pody ~6–8 min, RWO a VM po fencingu",site3:"Ano, plnohodnotný control plane node",latency:"Datové zóny < 10 ms (ODF); arbiter podle limitů etcd",verdict:"Jen se třetí lokalitou a s DR plánem",tone:"good",
+   detail:["Topologie, kterou Red Hat doporučuje pro cluster přes více lokalit: jeden člen control plane na lokalitu, tři lokality.","S ODF stretch clusterem (dvě datové zóny + arbiter zóna) nebo metro polem mají data RPO 0.","Pořád je to jedna failure doména: upgrady, chyby konfigurace a expirace certifikátů zasáhnou obě DC. Držte OADP zálohy mimo cluster nebo druhý cluster.","Třetí lokalita potřebuje skutečný node, ne lehký witness: standardní cluster nemá etcd-only arbiter (Two-Node with Arbiter je edge topologie omezená na dva workery)."]},
+  {id:"D",name:"Dva clustery + Regional-DR",short:"Nezávislé clustery, asynchronní replikace volumes (ODF, pole nebo aplikace)",dcLoss:"Failover aplikací přes ACM",rpo:"> 0: interval replikace (od 1 min) a change rate",rto:"Minuty, ručně spuštěno",site3:"Ne (hub ideálně neutrální)",latency:"Bez limitu",verdict:"Výchozí pro stavová data bez třetí lokality",tone:"good",
+   detail:["ODF Regional-DR asynchronně zrcadlí RBD volumes mezi dvěma ODF clustery; ACM orchestruje failover a failback po aplikacích.","Vyžaduje ODF Advanced a ACM. OpenShift Platform Plus obsahuje jen ODF Essentials.","Alternativy: asynchronní replikace pole s CSI VolumeReplication, VolSync, nebo replikace v aplikaci (DB streaming, Kafka MirrorMaker 2).","Failover je citlivá operace a zůstává ve výchozím stavu ruční; Event-Driven Ansible ho může automatizovat s ochranou proti falešnému triggeru."]},
+  {id:"E",name:"Dva clustery + Metro-DR",short:"Nezávislé clustery nad externím Ceph stretch clusterem s arbiterem",dcLoss:"Failover aplikací přes ACM",rpo:"0",rto:"Minuty",site3:"Ano, Ceph arbiter (~100 ms RTT)",latency:"< 10 ms",verdict:"RPO 0 se dvěma clustery",tone:"good",
+   detail:["Externí Red Hat Ceph Storage natažený přes obě DC se synchronní replikací; monitor arbiter sedí ve třetí lokalitě až ~100 ms daleko.","Jen all-flash, erasure coding není podporován, jedna DRPolicy na řešení.","Hub recovery pro Metro-DR je v ODF 4.18 Technology Preview.","Ekvivalent s metro polem: synchronní replikace plus witness, automatizace failoveru podle CSI podpory dodavatele."]},
+  {id:"F",name:"Dva clustery active/active",short:"GSLB posílá provoz do obou clusterů najednou",dcLoss:"GSLB přesměruje provoz",rpo:"Stateless 0; stavová data podle aplikace",rto:"Sekundy až minuty (health check + DNS TTL)",site3:"Ne (konsenzuální DB: ano)",latency:"Podle aplikace",verdict:"Výchozí pro stateless",tone:"good",
+   detail:["Oba clustery obsluhují provoz; globální load balancer kontroluje route v každém clusteru.","Stavová data replikuje sama aplikace: DB replikace, Kafka MirrorMaker 2, nebo databáze mimo OpenShift.","Konsenzuální databáze (CockroachDB, YugabyteDB) potřebují tři failure domény, stejně jako etcd. Dvě DC jim nestačí.","Oba clustery potřebují stejné platformní závislosti: IdP, registry, Git, Vault, S3, monitoring."]},
+  {id:"G",name:"Dva clustery + backup/restore",short:"OADP zálohy do objektového úložiště, obnova na druhém clusteru",dcLoss:"Obnova ze zálohy",rpo:"Frekvence záloh",rto:"Hodiny",site3:"Ne",latency:"Bez limitu",verdict:"Doplněk, ne primární DR",tone:"info",
+   detail:["OADP (Velero) zálohuje Kubernetes objekty a persistent volumes (CSI snapshot + data mover) do S3.","Red Hat nedoporučuje zálohy jako jedinou DR strategii: obnovy jsou vzácné, pomalé a málo testované.","Zálohy patří vedle každé další varianty: replikace přenese i logickou korupci a smazání.","DORA článek 12 vyžaduje obnovu do fyzicky i logicky oddělených systémů a pravidelné testy obnovy."]}
+ ]
+},
+config:{
+ title:"Která varianta sedí vám?",lead:"Odpovězte na šest otázek. Doporučení sleduje rozhodovací strom z reportu: kde leží data, požadované RPO, třetí lokalita, latence, platforma a zda je jeden cluster podmínkou.",
+ q:{
+  stateful:{label:"Kde leží stavová data?",opts:{pv:"Persistent volumes v OpenShiftu",vm:"Virtuální stroje (OpenShift Virtualization)",ext:"Mimo OpenShift (externí DB, mainframe)"}},
+  rpo:{label:"Jaké RPO potřebují kritické aplikace?",opts:{zero:"Nulová ztráta dat",min:"Minuty",hour:"Hodiny (stačí záloha)"}},
+  site3:{label:"Je k dispozici třetí lokalita?",yes:"Ano (místnost, pobočka, cloud tenant)",no:"Ne"},
+  latency:{label:"Round-trip latence mezi DC"},
+  platform:{label:"Platforma",opts:{bm:"Bare metal",vs:"vSphere",other:"Jiná / cloud"}},
+  single:{label:"Musí to být jeden cluster?",yes:"Ano, zákazník trvá",no:"Ne, dva clustery jsou přijatelné"}
+ },
+ result:{title:"Doporučení",primary:"Primární varianta",also:"Kombinovat s",warnings:"Pozor na",needs:"Budete potřebovat",always:"Vždy: OADP zálohy mimo cluster, GSLB, odolný ACM hub, pravidelné DR testy."},
+ texts:{
+  extF:"Stavová data jsou mimo OpenShift, OpenShift tedy nese stateless vrstvu. Provozujte dva clustery active/active za GSLB a DR databáze nechte na ní (např. Data Guard, Always On).",
+  minD:"RPO v minutách jde splnit bez třetí lokality. Dva clustery s Regional-DR, asynchronní replikací pole nebo replikací v aplikaci; failover po aplikacích přes ACM.",
+  hourG:"Zálohy RPO splní. Dva clustery postavené z Gitu, OADP zálohy do S3 dostupného z obou DC, obnova na přeživším clusteru.",
+  zeroNoSiteSingleBm:"RPO 0, bez třetí lokality a jeden cluster podmínkou: stretched 3+2 na bare metal je nejméně špatná volba. Quorum se s většinovým DC ztratí stejně; dvě přeživší kopie etcd dělají ruční obnovu bezpečnější.",
+  zeroNoSiteSingle:"RPO 0, bez třetí lokality a jeden cluster podmínkou: zbývá jen stretched 2+1 jako vědomě přijaté riziko. Většinové DC označte jako primární a nacvičte quorum-restore.sh.",
+  zeroNoSite:"RPO 0 bez třetí lokality nelze bezpečně automatizovat. Použijte synchronní replikaci pole s ručním failoverem, nebo přehodnoťte RPO: minuty obvykle otevřou Regional-DR.",
+  zeroSiteSingle:"RPO 0, třetí lokalita, jeden cluster: stretched 1+1+1 s jedním control plane node na lokalitu a synchronním storage (ODF stretch cluster nebo metro pole). Vedle něj držte DR cíl.",
+  zeroSiteE:"RPO 0 se dvěma clustery: Metro-DR nad externím Ceph stretch clusterem, arbiter ve třetí lokalitě. Nebo metro pole s witness a CSI replikací.",
+  alsoF:"F pro stateless služby (active/active za GSLB)",alsoG:"G: OADP zálohy mimo cluster",alsoD:"D pro méně kritická stavová data (async, bez třetí lokality)",alsoDR:"DR cíl pro stretched cluster: druhý cluster nebo aspoň zálohy mimo cluster",
+  wLat100:"Latence nad 100 ms: stretched control plane je mimo limity etcd. Možné jsou jen dva clustery.",
+  wLat10:"Latence nad 10 ms: ODF stretch cluster a Metro-DR nejsou podporovány. Synchronní varianty potřebují pole, které to toleruje, nebo přejděte na async.",
+  wLat5:"Latence nad 5 ms: nad doporučením Red Hat pro stretched cluster. Před produkcí otestujte partition, jitter a etcd apply times.",
+  wVm:"VM běží v jedné instanci: fencing (Node Health Check + Fence Agents Remediation) je nutný, než se VM může restartovat jinde. Řiďte restart storm a držte ~100 % volné kapacity v přeživším DC.",
+  wVsphere:"Na vSphere s metro storage clusterem může vSphere HA restartovat control plane VM v druhém DC a obnovit quorum bez quorum-restore.sh. Otestujte to a potvrďte podporu s Red Hat.",
+  wBmOnly:"4 nebo 5 control plane nodes je dostupných jen na bare metal.",
+  wConsensus:"Active/active s konsenzuální databází potřebuje tři failure domény; se dvěma DC plánujte pro tuto databázi active/passive.",
+  wHub:"Umístění ACM hubu: ve třetí lokalitě, nebo active/passive huby s OADP zálohou do S3. Bez dostupného hubu nelze spustit ODF DR failover.",
+  wSingle:"Jeden stretched cluster je jedna failure doména. Upgrady a chyby konfigurace zasáhnou obě DC; držte plán rollbacku a zálohy mimo cluster.",
+  nOdfAdv:"Subskripce ODF Advanced + ACM",nGslb:"Globální load balancer (F5, Infoblox nebo Connectivity Link s CoreDNS)",nGit:"GitOps repozitář s DR overlayi a break-glass cestou",nS3:"S3 dostupné z obou DC pro OADP a zálohy ACM hubu",nFence:"BMC s Redfish pro fencing",nSite3:"Server nebo VM ve třetí lokalitě (control plane node nebo Ceph arbiter)",nDeps:"Platformní závislosti v obou DC: DNS, NTP, IdP, registry, Git, Vault, monitoring",nTest:"Zdokumentované testy: ztráta DC, partition, MTU, špička latence",nArray:"Storage pole se synchronní replikací a podporou CSI VolumeReplication"
+ }
+},
+data:{title:"Data a storage rozhodují o RPO",lead:"OpenShift neurčuje dosažitelné RPO; určuje ho storage a aplikace. Nejdřív zjistěte, kde stav leží. U bank často v databázích mimo OpenShift a OpenShift nese hlavně stateless vrstvu.",
+ items:[{h:"ODF stretch cluster",b:"Jeden OpenShift cluster, dvě datové zóny (< 10 ms RTT) a arbiter zóna. Vyžaduje tři control plane nodes ve třech zónách a aspoň čtyři workery rovnoměrně v datových zónách."},
+  {h:"ODF Metro-DR",b:"Dva clustery nad externím Red Hat Ceph Storage stretch clusterem. RPO 0, jen all-flash, jedna DRPolicy, arbiter ve třetí lokalitě až ~100 ms daleko."},
+  {h:"ODF Regional-DR",b:"Asynchronní RBD mirroring mezi dvěma ODF clustery, interval od 1 minuty. RPO > 0, bez limitu vzdálenosti, failover po aplikacích přes ACM."},
+  {h:"Licence",b:"Všechny tři ODF DR varianty vyžadují ODF Advanced; Metro-DR a Regional-DR navíc ACM. OpenShift Platform Plus obsahuje jen ODF Essentials."},
+  {h:"Storage pole s CSI replikací",b:"Hitachi GAD, NetApp, Pure, Dell, IBM. Replikace volume není v CSI standardizovaná, takže automatizace failoveru závisí na dodavateli: bez CSI podpory, CSI VolumeReplication, nebo i replikace metadat namespace. Většina metro řešení potřebuje witness ve třetí lokalitě."},
+  {h:"Replikace v aplikaci",b:"DB streaming replikace, Kafka MirrorMaker 2. Aplikace ví, co replikuje, a hlásí stav. Synchronní konsenzus znovu vyžaduje tři lokality."},
+  {h:"VolSync (součást ACM)",b:"Asynchronní kopie PV mezi clustery bez ODF. Vhodné pro méně kritická data."},
+  {h:"Zálohy vždy vedle replikace",b:"Replikace přenese i logickou korupci a smazání. DORA článek 12 vyžaduje obnovu do fyzicky i logicky oddělených systémů a pravidelné testy obnovy."}]},
+traffic:{title:"Řízení provozu a konektivita",lead:"Globální load balancer je povinná součást každé varianty se dvěma clustery; dokumentace ho vyžaduje i pro stretched cluster. U active/active určuje RTO health check GSLB a DNS TTL.",
+ items:[{h:"Existující GSLB",b:"F5 BIG-IP DNS, Infoblox a podobné jsou nejrychlejší cesta: wide IP na aplikaci, health check na route v každém clusteru."},
+  {h:"Red Hat Connectivity Link (Kuadrant)",b:"DNSPolicy na Gateway API spravuje globální DNS záznamy deklarativně. Integrace s CoreDNS pro on-prem DNS je od 1.3 GA (v 1.1 Tech Preview). Vyžaduje delegaci zóny z firemního DNS na CoreDNS VIP."},
+  {h:"East-west mezi clustery",b:"Submariner (součást ACM) na síťové vrstvě, Red Hat Service Interconnect (Skupper) na aplikační vrstvě, nebo OpenShift Service Mesh 3 v multi-primary federaci s preferencí lokální instance."},
+  {h:"Síť stretched clusteru",b:"Přímá IP konektivita mezi nody, jednotné MTU, on-prem VIP (keepalived) pro API a ingress, které předpokládají jeden L2 segment. Oddělené L3 sítě DC potřebují externí load balancer."},
+  {h:"Platformní závislosti v obou DC",b:"DNS, NTP, IdP (AD/LDAP), image registry (Quay nebo mirror), Git, Vault a S3 pro zálohy. Jinak DR cluster aplikace nespustí, i když data má."}]},
+mgmt:{title:"Management vrstva musí výpadek přežít",lead:"ACM hub spouští failover přes DRPlacementControl a drží placementy a policies. Když padne DC s hubem, failover nemá kdo spustit, proto musí být hub odolnější než to, co chrání.",
+ items:[{h:"Umístění hubu",b:"Dokumentace ODF: aktivní hub u primárního clusteru a pasivní u sekundárního, nebo aktivní hub v neutrální třetí lokalitě. Hub recovery pro Metro-DR je v ODF 4.18 Technology Preview."},
+  {h:"Active/passive hub přes OADP",b:"Aktivní hub zálohuje do S3; pasivní průběžně obnovuje pasivní data (syncRestoreWithNewBackups, výchozí interval 30 min). Aktivační data se obnoví až při failoveru. Od ACM 2.7 se managed clustery umí znovu připojit automaticky."},
+  {h:"Runbook řízený labelem",b:"Label spravovaný v Gitu (active / standby / failover) aplikovaný přes Policy přepíná BackupSchedule a BackupStorageLocation mezi huby. Použitelné jako hotový runbook pro zákazníka."},
+  {h:"GitOps jako zdroj pravdy",b:"Stav aplikací v Gitu, DR jako overlay nad běžným stavem. Držte break-glass cestu (oc apply -k overlays/dr) pro případ, že Git nebo Argo CD nejsou dostupné."},
+  {h:"Spouštění failoveru",b:"Red Hat ho standardně nechává ruční. Event-Driven Ansible může volat ACM API, ale návrh musí řešit ochranu proti falešnému triggeru při partition."}]},
+virt:{title:"OpenShift Virtualization",lead:"VM jsou nejčastější důvod, proč zákazník chce stretched cluster: běží v jedné instanci, nemají aplikační replikaci a z VMware jsou zvyklé na vSphere Metro Storage Cluster. Ekvivalent v OpenShiftu je stretched 1+1+1 se synchronním storage, a stejně jako vMSC potřebuje třetí lokalitu.",
+ items:[{h:"Stretched cluster pro VM",b:"Symetrická replikace storage, stretched VLAN, latence ~5 ms a witness site. Třetí lokalitu vyžaduje etcd a obvykle hostí jeden control plane node. Restartované VM mají RPO 0."},
+  {h:"Bez fencingu se VM nepřesunou bezpečně",b:"Node Health Check + Fence Agents Remediation (doporučeno pro Virtualization) s out-of-service taintem. Bez ladění trvá přeplánování z nedostupného nodu zhruba 12 minut, s laděním kolem 1,5 minuty."},
+  {h:"Restart storm",b:"Po ztrátě DC OpenShift přeplánuje všechny VM najednou. Řiďte pořadí a tempo (node selectory, priority) a držte ~100 % kapacity v přeživším DC."},
+  {h:"Dva clustery pro VM",b:"Jednosměrná replikace pole nebo ODF Regional/Metro-DR, stav VM v GitOps jako DR overlay. Cross-cluster live migration (4.20, Tech Preview) slouží pro plánované přesuny, ne pro DR."},
+  {h:"4–5 control plane nodes",b:"Zavedeno pro dvoulokalitní VM nasazení na bare metal (2+2, 3+2). Při ztrátě DC přežijí dvě kopie etcd, obnova ale zůstává ruční."},
+  {h:"Subskripce",b:"Stretched cluster vyžaduje obě lokality plně subskribované; warm DR lokalita může držet vypnuté VM. Podmínky pro DR kapacitu ověřte se sales."}]},
+discovery:{title:"Otázky pro zákazníka",lead:"Tyto odpovědi rozhodnou mezi variantami víc než cokoli jiného. První tři jsou klíčové.",
+ items:[{k:1,t:"Co pro vás znamená „HA“: jaké RPO a RTO potřebují jednotlivé aplikační tiery, a spouští failover automatika, nebo člověk?"},
+  {k:1,t:"Existuje třetí lokalita? Provozujete už witness, mediator nebo tiebreaker pro storage nebo vSAN? Může tam stát server nebo VM pro control plane node či Ceph arbiter?"},
+  {k:1,t:"Kde leží stavová data: databáze mimo OpenShift, PV v OpenShiftu, nebo VM?"},
+  {k:0,t:"Platforma: bare metal, vSphere, nebo jiná? (4–5 control plane nodes jen na bare metal; na vSphere hraje roli vSphere HA a vMSC.)"},
+  {k:0,t:"Síť mezi DC: vzdálenost, RTT a jitter, šířka pásma, stretched L2 ano/ne, redundance tras."},
+  {k:0,t:"Storage: ODF, nebo pole s CSI driverem? Který dodavatel a podporuje CSI VolumeReplication?"},
+  {k:0,t:"Existující GSLB a DNS (F5, Infoblox) a kdo je spravuje?"},
+  {k:0,t:"Platformní závislosti v obou DC: IdP, registry, Git, Vault, S3, monitoring."},
+  {k:0,t:"Regulace: DORA, požadavky regulátora nebo interní politika na oddělené zálohy a frekvenci DR testů."},
+  {k:0,t:"Licence: OpenShift Platform Plus, nebo OCP + ACM + ODF zvlášť? DR funkce ODF vyžadují ODF Advanced."}],
+ progress:"{done} z {total} zodpovězeno"},
+sources:{title:"Zdroje",lead:"Dokumentace Red Hat a blogy, ze kterých průvodce vychází.",groups:{docs:"Dokumentace Red Hat",blogs:"Blogy a články Red Hat",other:"Prezentace a ostatní"}}
+};
+I18N.sk = {
+nav:{principle:"Podstata problému",variants:"Varianty",config:"Konfigurátor",data:"Dáta a storage",traffic:"Prevádzka",mgmt:"Manažment",virt:"Virtualizácia",discovery:"Discovery",sources:"Zdroje"},
+hero:{kicker:"Interaktívny sprievodca",title:"Vysoká dostupnosť OpenShift naprieč dvoma dátovými centrami",lead:"Čo cluster natiahnutý cez dve lokality dokáže a nedokáže, prečo záleží na tretej lokalite a ktorá architektúra zodpovedá vášmu RPO, dátam a workloadom. Vyskúšajte simulátor a nechajte konfigurátor vybrať variant."},
+footer:"Stav k 18. 10. 2026. Informatívny materiál, nie oficiálne stanovisko podpory Red Hat; možnosti produktov sa medzi verziami menia, overte ich v aktuálnej dokumentácii. Vychádza z dokumentácie Red Hat (OCP 4.21 etcd guidance, ODF 4.18 DR, ACM) a blogov Red Hat. Hodnoty RPO/RTO sú typické rozsahy; zmerajte ich vlastným testom.",
+principle:{
+ title:"Prečo dve lokality jednému clusteru nestačia",
+ lead:"OpenShift drží svoj stav v etcd, ktoré potrebuje zhodu väčšiny členov. Pri rozdelení do dvoch lokalít má väčšinu vždy jedna z nich. Keď táto lokalita vypadne, control plane prestane zapisovať.",
+ hadr:{title:"HA nie je DR",body:"HA kryje výpadok komponentu vnútri jednej failure domény a zotaví sa automaticky. DR kryje stratu celej domény (dátového centra) a meria sa v RPO (stratené dáta) a RTO (čas výpadku). Tri control plane nodes v jednom DC sú HA, nie DR."},
+ drtwo:{title:"DR sú dva problémy",body:"Red Hat nechráni samotný cluster. Chráni kontinuitu aplikácií ich failoverom na iný cluster. To znamená vyriešiť smerovanie prevádzky a replikáciu dát. Stateless aplikácie potrebujú len prvé, stavové obidve."},
+ disposable:{title:"Cluster je disposable, dáta nie",lead:"Kubernetes predpokladá, že cluster sa dá postaviť znova. S GitOps je každý cluster, operátor aj aplikácia reprodukovateľný z Gitu. Čo z Gitu postaviť nejde, je stav aplikácií. DR navrhujte okolo neho.",
+  cols:[{h:"Postaviteľné z Gitu",items:["Inštalačná konfigurácia clustera a day-2 operátory","Namespaces, Deployments, Routes, Policies","Secrets a konfigurácia cez Vault / sealed secrets","ACM placementy, DR overlaye"]},
+        {h:"Nutné chrániť",items:["Databázy (v OpenShifte aj mimo neho)","Persistent volumes a disky VM","Logy správ (Kafka), objektové úložisko","Certifikáty, kľúče, stav IdP"]},
+        {h:"Dôsledok",items:["Rozpočet na HA dajte do replikácie dát, nie do naťahovania control plane","Druhému clusteru postavenému z Gitu sa dá veriť lacnejšie než stretched clusteru","Zálohy musia existovať popri replikácii: replikácia prenesie aj korupciu"]}]},
+ blast:{title:"Blast radius",body:"Stretched cluster spája obe DC do jednej failure domény. Chybný upgrade, zlá MachineConfig, expirované certifikáty alebo poškodené etcd zasiahnu obe lokality naraz. Dva clustery tieto chyby izolujú a dovolia upgradovať jeden ako canary. Partition siete je horšia než čistý výpadok: pody v izolovanej lokalite bežia ďalej bez riadenia, takže stavové pody a VM potrebujú fencing, kým ich možno spustiť inde."}
+},
+sim:{
+ title:"Simulátor etcd quorum",lead:"Vyberte topológiu a kliknutím na lokalitu ju vyraďte. Sledujte, čo sa stane s API a workloadmi.",
+ topology:"Topológia",topos:{"2+1":"Stretched 2+1 (3 control plane)","1+1+1":"Stretched 1+1+1 (tretia lokalita)","2+2":"Stretched 2+2 (bare metal)","3+2":"Stretched 3+2 (bare metal)","two":"Dva nezávislé clustery"},
+ sites:{dc1:"Dátové centrum 1",dc2:"Dátové centrum 2",s3:"Tretia lokalita"},hint:"Kliknutím na lokalitu ju vyradíte",isolate:"Prerušiť linku DC1–DC2",isolateOn:"Linka prerušená (DC2 izolované)",reset:"Reset",cp:"CP",workers:"workery",cluster:"Cluster",none:"nepoužitá",
+ stats:{members:"Živé členy etcd",quorum:"Potrebné quorum",api:"Kubernetes API",workloads:"Workloady",recovery:"Obnova"},
+ api:{rw:"čítanie/zápis",ro:"len čítanie",down:"nedostupné"},
+ out:{
+  ok:"V poriadku. Všetky lokality bežia, API zapisuje, scheduler môže presúvať pody.",
+  minor:"Quorum zostalo. Pody zo stratenej lokality sa po timeoutoch nodov (predvolene cca 5 min) preplánujú do preživšej lokality. RWO volumes a VM potrebujú najprv fencing.",
+  major:"Quorum stratené. API je len na čítanie: bežiace pody bežia ďalej, ale nič nemožno preplánovať, škálovať ani aktualizovať. Admin musí spustiť quorum-restore.sh na preživšom node; posledné zápisy môžu byť stratené. Zostáva {copies} kópia/kópií etcd.",
+  all:"Všetky lokality mimo prevádzky. Obnova zo zálohy etcd alebo nová stavba clustera z Gitu.",
+  partition:"Partition. DC1 si drží quorum a po timeoutoch preplánuje pody z DC2, pričom pody v DC2 stále bežia bez riadenia. Bez fencingu môže stavový pod alebo VM bežať dvakrát nad tým istým replikovaným volume.",
+  partitionMajorLost:"Partition. DC2 je izolované a DC1 nemá quorum: API len na čítanie na oboch stranách. Ručná obnova v každom prípade.",
+  partition111:"Partition. Tretia lokalita rozhodne: quorum drží to DC, s ktorým má spojenie. Izolované DC ďalej beží pody bez riadenia, fencing je nutný.",
+  twoOk:"Oba clustery v poriadku. GSLB posiela prevádzku do oboch (alebo do aktívneho). Dáta sa medzi nimi replikujú.",
+  twoLost:"Cluster v {site} je mimo prevádzky. Druhý cluster nie je dotknutý. GSLB presmeruje prevádzku; stavové aplikácie prepne ACM failover s RPO podľa typu replikácie (pozri konfigurátor).",
+  twoPartition:"Linka prerušená. Každý cluster beží sám. Replikácia sa zastaví; failover potrebuje ACM hub dostupný z preživšej strany.",
+  recoverNone:"nie je potrebná",recoverAuto:"automatická",recoverManual:"ručná: quorum-restore.sh, potom znova postaviť stratené nody",recoverFailover:"ACM failover (ručné spustenie), GSLB",recoverBackup:"záloha etcd alebo stavba z Gitu"
+ }
+},
+variants:{
+ title:"Sedem spôsobov, ako prevádzkovať OpenShift cez dve DC",lead:"Kliknite na kartu pre detaily. A a B naťahujú jeden cluster bez tretej lokality, C s ňou, D až G používajú dva nezávislé clustery.",tableTitle:"Vedľa seba",
+ cols:{dcLoss:"Strata celého DC",rpo:"RPO",rto:"RTO",site3:"Tretia lokalita",latency:"Latencia medzi DC",verdict:"Hodnotenie"},
+ map:{title:"Mapa RPO a RTO",lead:"Kde ktorý variant leží. Vľavo dole je lepšie; RPO 0 s automatizovanou obnovou dosiahnu len C a E a obe potrebujú tretiu lokalitu.",rpo:"RPO (stratené dáta)",rto:"RTO (čas obnovy)",scale:["0","sekundy","minúty","hodiny"]},
+ items:[
+  {id:"A",name:"Stretched 2+1",short:"Jeden cluster, dva control plane nodes v DC1, jeden v DC2",dcLoss:"Strata DC2: v poriadku. Strata DC1: API len na čítanie",rpo:"etcd: ohrozené posledné zápisy; dáta podľa storage",rto:"Ručné, závisí od runbooku",site3:"Nie",latency:"etcd peer RTT < 100 ms (odporúčané < 5 ms); s ODF < 10 ms",verdict:"Neodporúčané",tone:"crit",
+   detail:["Red Hat to podporuje, ale dokumentácia to opisuje ako jednu failure doménu, ktorá nesmie nahradiť DR plán.","Strata väčšinovej lokality prepne API do read-only. Obnova je quorum-restore.sh na poslednom node v DC2 s rizikom straty zápisov, ktoré tam ešte nedorazili.","Vyžaduje priamu IP konektivitu, jednotné MTU a VIP pre API a ingress; oddelené L3 siete potrebujú externý load balancer.","Každé narušenie (partition, nesúlad MTU, špička latencie, jitter) treba otestovať pred produkciou."]},
+  {id:"B",name:"Stretched 2+2 alebo 3+2",short:"Štyri alebo päť control plane nodes, len bare metal, OCP 4.17+",dcLoss:"Ako A, ale prežijú dve kópie etcd",rpo:"Ako A, nižšie riziko",rto:"Ručné",site3:"Nie",latency:"Ako A; len bare metal",verdict:"Kompromis pre VM bez tretej lokality",tone:"warn",
+   detail:["Red Hat zaviedol 4 a 5 control plane nodes práve pre dvojlokalitné VM nasadenia na bare metal.","Quorum sa pri strate DC stratí rovnako, ale v preživšej lokalite zostanú dve read-only kópie etcd, takže ručná obnova má zálohu.","Nasadzuje sa ako 3 nody a škáluje deň 2 (Assisted alebo Agent-based installer).","Viac control plane nodes mierne znižuje priepustnosť a zvyšuje latenciu."]},
+  {id:"C",name:"Stretched 1+1+1",short:"Jeden cluster, jeden control plane node na lokalitu, tretia lokalita hostí rozhodujúci hlas",dcLoss:"Control plane prežije automaticky",rpo:"0 so synchrónnym storage",rto:"Minúty: RWX pody ~6–8 min, RWO a VM po fencingu",site3:"Áno, plnohodnotný control plane node",latency:"Dátové zóny < 10 ms (ODF); arbiter podľa limitov etcd",verdict:"Len s treťou lokalitou a s DR plánom",tone:"good",
+   detail:["Topológia, ktorú Red Hat odporúča pre cluster cez viac lokalít: jeden člen control plane na lokalitu, tri lokality.","S ODF stretch clusterom (dve dátové zóny + arbiter zóna) alebo metro poľom majú dáta RPO 0.","Stále je to jedna failure doména: upgrady, chyby konfigurácie a expirácia certifikátov zasiahnu obe DC. Držte OADP zálohy mimo clustera alebo druhý cluster.","Tretia lokalita potrebuje skutočný node, nie ľahký witness: štandardný cluster nemá etcd-only arbiter (Two-Node with Arbiter je edge topológia obmedzená na dva workery)."]},
+  {id:"D",name:"Dva clustery + Regional-DR",short:"Nezávislé clustery, asynchrónna replikácia volumes (ODF, pole alebo aplikácia)",dcLoss:"Failover aplikácií cez ACM",rpo:"> 0: interval replikácie (od 1 min) a change rate",rto:"Minúty, ručne spustené",site3:"Nie (hub ideálne neutrálny)",latency:"Bez limitu",verdict:"Predvolené pre stavové dáta bez tretej lokality",tone:"good",
+   detail:["ODF Regional-DR asynchrónne zrkadlí RBD volumes medzi dvoma ODF clustermi; ACM orchestruje failover a failback po aplikáciách.","Vyžaduje ODF Advanced a ACM. OpenShift Platform Plus obsahuje len ODF Essentials.","Alternatívy: asynchrónna replikácia poľa s CSI VolumeReplication, VolSync, alebo replikácia v aplikácii (DB streaming, Kafka MirrorMaker 2).","Failover je citlivá operácia a zostáva predvolene ručný; Event-Driven Ansible ho môže automatizovať s ochranou proti falošnému triggeru."]},
+  {id:"E",name:"Dva clustery + Metro-DR",short:"Nezávislé clustery nad externým Ceph stretch clusterom s arbitrom",dcLoss:"Failover aplikácií cez ACM",rpo:"0",rto:"Minúty",site3:"Áno, Ceph arbiter (~100 ms RTT)",latency:"< 10 ms",verdict:"RPO 0 s dvoma clustermi",tone:"good",
+   detail:["Externý Red Hat Ceph Storage natiahnutý cez obe DC so synchrónnou replikáciou; monitor arbiter sedí v tretej lokalite až ~100 ms ďaleko.","Len all-flash, erasure coding nie je podporovaný, jedna DRPolicy na riešenie.","Hub recovery pre Metro-DR je v ODF 4.18 Technology Preview.","Ekvivalent s metro poľom: synchrónna replikácia plus witness, automatizácia failoveru podľa CSI podpory dodávateľa."]},
+  {id:"F",name:"Dva clustery active/active",short:"GSLB posiela prevádzku do oboch clusterov naraz",dcLoss:"GSLB presmeruje prevádzku",rpo:"Stateless 0; stavové dáta podľa aplikácie",rto:"Sekundy až minúty (health check + DNS TTL)",site3:"Nie (konsenzuálne DB: áno)",latency:"Podľa aplikácie",verdict:"Predvolené pre stateless",tone:"good",
+   detail:["Oba clustery obsluhujú prevádzku; globálny load balancer kontroluje route v každom clusteri.","Stavové dáta replikuje sama aplikácia: DB replikácia, Kafka MirrorMaker 2, alebo databáza mimo OpenShift.","Konsenzuálne databázy (CockroachDB, YugabyteDB) potrebujú tri failure domény, rovnako ako etcd. Dve DC im nestačia.","Oba clustery potrebujú rovnaké platformové závislosti: IdP, registry, Git, Vault, S3, monitoring."]},
+  {id:"G",name:"Dva clustery + backup/restore",short:"OADP zálohy do objektového úložiska, obnova na druhom clusteri",dcLoss:"Obnova zo zálohy",rpo:"Frekvencia záloh",rto:"Hodiny",site3:"Nie",latency:"Bez limitu",verdict:"Doplnok, nie primárne DR",tone:"info",
+   detail:["OADP (Velero) zálohuje Kubernetes objekty a persistent volumes (CSI snapshot + data mover) do S3.","Red Hat neodporúča zálohy ako jedinú DR stratégiu: obnovy sú zriedkavé, pomalé a málo testované.","Zálohy patria popri každom ďalšom variante: replikácia prenesie aj logickú korupciu a zmazanie.","DORA článok 12 vyžaduje obnovu do fyzicky aj logicky oddelených systémov a pravidelné testy obnovy."]}
+ ]
+},
+config:{
+ title:"Ktorý variant sedí vám?",lead:"Odpovedzte na šesť otázok. Odporúčanie sleduje rozhodovací strom z reportu: kde ležia dáta, požadované RPO, tretia lokalita, latencia, platforma a či je jeden cluster podmienkou.",
+ q:{
+  stateful:{label:"Kde ležia stavové dáta?",opts:{pv:"Persistent volumes v OpenShifte",vm:"Virtuálne stroje (OpenShift Virtualization)",ext:"Mimo OpenShift (externá DB, mainframe)"}},
+  rpo:{label:"Aké RPO potrebujú kritické aplikácie?",opts:{zero:"Nulová strata dát",min:"Minúty",hour:"Hodiny (stačí záloha)"}},
+  site3:{label:"Je k dispozícii tretia lokalita?",yes:"Áno (miestnosť, pobočka, cloud tenant)",no:"Nie"},
+  latency:{label:"Round-trip latencia medzi DC"},
+  platform:{label:"Platforma",opts:{bm:"Bare metal",vs:"vSphere",other:"Iná / cloud"}},
+  single:{label:"Musí to byť jeden cluster?",yes:"Áno, zákazník trvá",no:"Nie, dva clustery sú prijateľné"}
+ },
+ result:{title:"Odporúčanie",primary:"Primárny variant",also:"Kombinovať s",warnings:"Pozor na",needs:"Budete potrebovať",always:"Vždy: OADP zálohy mimo clustera, GSLB, odolný ACM hub, pravidelné DR testy."},
+ texts:{
+  extF:"Stavové dáta sú mimo OpenShift, OpenShift teda nesie stateless vrstvu. Prevádzkujte dva clustery active/active za GSLB a DR databázy nechajte na nej (napr. Data Guard, Always On).",
+  minD:"RPO v minútach sa dá splniť bez tretej lokality. Dva clustery s Regional-DR, asynchrónnou replikáciou poľa alebo replikáciou v aplikácii; failover po aplikáciách cez ACM.",
+  hourG:"Zálohy RPO splnia. Dva clustery postavené z Gitu, OADP zálohy do S3 dostupného z oboch DC, obnova na preživšom clusteri.",
+  zeroNoSiteSingleBm:"RPO 0, bez tretej lokality a jeden cluster podmienkou: stretched 3+2 na bare metal je najmenej zlá voľba. Quorum sa s väčšinovým DC stratí rovnako; dve preživšie kópie etcd robia ručnú obnovu bezpečnejšou.",
+  zeroNoSiteSingle:"RPO 0, bez tretej lokality a jeden cluster podmienkou: zostáva len stretched 2+1 ako vedome prijaté riziko. Väčšinové DC označte ako primárne a nacvičte quorum-restore.sh.",
+  zeroNoSite:"RPO 0 bez tretej lokality nemožno bezpečne automatizovať. Použite synchrónnu replikáciu poľa s ručným failoverom, alebo prehodnoťte RPO: minúty zvyčajne otvoria Regional-DR.",
+  zeroSiteSingle:"RPO 0, tretia lokalita, jeden cluster: stretched 1+1+1 s jedným control plane node na lokalitu a synchrónnym storage (ODF stretch cluster alebo metro pole). Popri ňom držte DR cieľ.",
+  zeroSiteE:"RPO 0 s dvoma clustermi: Metro-DR nad externým Ceph stretch clusterom, arbiter v tretej lokalite. Alebo metro pole s witness a CSI replikáciou.",
+  alsoF:"F pre stateless služby (active/active za GSLB)",alsoG:"G: OADP zálohy mimo clustera",alsoD:"D pre menej kritické stavové dáta (async, bez tretej lokality)",alsoDR:"DR cieľ pre stretched cluster: druhý cluster alebo aspoň zálohy mimo clustera",
+  wLat100:"Latencia nad 100 ms: stretched control plane je mimo limitov etcd. Možné sú len dva clustery.",
+  wLat10:"Latencia nad 10 ms: ODF stretch cluster a Metro-DR nie sú podporované. Synchrónne varianty potrebujú pole, ktoré to toleruje, alebo prejdite na async.",
+  wLat5:"Latencia nad 5 ms: nad odporúčaním Red Hat pre stretched cluster. Pred produkciou otestujte partition, jitter a etcd apply times.",
+  wVm:"VM bežia v jednej inštancii: fencing (Node Health Check + Fence Agents Remediation) je nutný, kým sa VM môže reštartovať inde. Riaďte restart storm a držte ~100 % voľnej kapacity v preživšom DC.",
+  wVsphere:"Na vSphere s metro storage clusterom môže vSphere HA reštartovať control plane VM v druhom DC a obnoviť quorum bez quorum-restore.sh. Otestujte to a potvrďte podporu s Red Hat.",
+  wBmOnly:"4 alebo 5 control plane nodes je dostupných len na bare metal.",
+  wConsensus:"Active/active s konsenzuálnou databázou potrebuje tri failure domény; s dvoma DC plánujte pre túto databázu active/passive.",
+  wHub:"Umiestnenie ACM hubu: v tretej lokalite, alebo active/passive huby s OADP zálohou do S3. Bez dostupného hubu nemožno spustiť ODF DR failover.",
+  wSingle:"Jeden stretched cluster je jedna failure doména. Upgrady a chyby konfigurácie zasiahnu obe DC; držte plán rollbacku a zálohy mimo clustera.",
+  nOdfAdv:"Subskripcie ODF Advanced + ACM",nGslb:"Globálny load balancer (F5, Infoblox alebo Connectivity Link s CoreDNS)",nGit:"GitOps repozitár s DR overlaymi a break-glass cestou",nS3:"S3 dostupné z oboch DC pre OADP a zálohy ACM hubu",nFence:"BMC s Redfish pre fencing",nSite3:"Server alebo VM v tretej lokalite (control plane node alebo Ceph arbiter)",nDeps:"Platformové závislosti v oboch DC: DNS, NTP, IdP, registry, Git, Vault, monitoring",nTest:"Zdokumentované testy: strata DC, partition, MTU, špička latencie",nArray:"Storage pole so synchrónnou replikáciou a podporou CSI VolumeReplication"
+ }
+},
+data:{title:"Dáta a storage rozhodujú o RPO",lead:"OpenShift neurčuje dosiahnuteľné RPO; určuje ho storage a aplikácia. Najprv zistite, kde stav leží. V bankách často v databázach mimo OpenShift a OpenShift nesie hlavne stateless vrstvu.",
+ items:[{h:"ODF stretch cluster",b:"Jeden OpenShift cluster, dve dátové zóny (< 10 ms RTT) a arbiter zóna. Vyžaduje tri control plane nodes v troch zónach a aspoň štyri workery rovnomerne v dátových zónach."},
+  {h:"ODF Metro-DR",b:"Dva clustery nad externým Red Hat Ceph Storage stretch clusterom. RPO 0, len all-flash, jedna DRPolicy, arbiter v tretej lokalite až ~100 ms ďaleko."},
+  {h:"ODF Regional-DR",b:"Asynchrónny RBD mirroring medzi dvoma ODF clustermi, interval od 1 minúty. RPO > 0, bez limitu vzdialenosti, failover po aplikáciách cez ACM."},
+  {h:"Licencie",b:"Všetky tri ODF DR varianty vyžadujú ODF Advanced; Metro-DR a Regional-DR navyše ACM. OpenShift Platform Plus obsahuje len ODF Essentials."},
+  {h:"Storage polia s CSI replikáciou",b:"Hitachi GAD, NetApp, Pure, Dell, IBM. Replikácia volume nie je v CSI štandardizovaná, takže automatizácia failoveru závisí od dodávateľa: bez CSI podpory, CSI VolumeReplication, alebo aj replikácia metadát namespace. Väčšina metro riešení potrebuje witness v tretej lokalite."},
+  {h:"Replikácia v aplikácii",b:"DB streaming replikácia, Kafka MirrorMaker 2. Aplikácia vie, čo replikuje, a hlási stav. Synchrónny konsenzus znova vyžaduje tri lokality."},
+  {h:"VolSync (súčasť ACM)",b:"Asynchrónne kópie PV medzi clustermi bez ODF. Vhodné pre menej kritické dáta."},
+  {h:"Zálohy vždy popri replikácii",b:"Replikácia prenesie aj logickú korupciu a zmazanie. DORA článok 12 vyžaduje obnovu do fyzicky aj logicky oddelených systémov a pravidelné testy obnovy."}]},
+traffic:{title:"Riadenie prevádzky a konektivita",lead:"Globálny load balancer je povinná súčasť každého variantu s dvoma clustermi; dokumentácia ho vyžaduje aj pre stretched cluster. Pri active/active určuje RTO health check GSLB a DNS TTL.",
+ items:[{h:"Existujúce GSLB",b:"F5 BIG-IP DNS, Infoblox a podobné sú najrýchlejšia cesta: wide IP na aplikáciu, health check na route v každom clusteri."},
+  {h:"Red Hat Connectivity Link (Kuadrant)",b:"DNSPolicy na Gateway API spravuje globálne DNS záznamy deklaratívne. Integrácia s CoreDNS pre on-prem DNS je od 1.3 GA (v 1.1 Tech Preview). Vyžaduje delegáciu zóny z firemného DNS na CoreDNS VIP."},
+  {h:"East-west medzi clustermi",b:"Submariner (súčasť ACM) na sieťovej vrstve, Red Hat Service Interconnect (Skupper) na aplikačnej vrstve, alebo OpenShift Service Mesh 3 v multi-primary federácii s preferenciou lokálnej inštancie."},
+  {h:"Sieť stretched clustera",b:"Priama IP konektivita medzi nodmi, jednotné MTU, on-prem VIP (keepalived) pre API a ingress, ktoré predpokladajú jeden L2 segment. Oddelené L3 siete DC potrebujú externý load balancer."},
+  {h:"Platformové závislosti v oboch DC",b:"DNS, NTP, IdP (AD/LDAP), image registry (Quay alebo mirror), Git, Vault a S3 pre zálohy. Inak DR cluster aplikácie nespustí, aj keď dáta má."}]},
+mgmt:{title:"Manažment vrstva musí výpadok prežiť",lead:"ACM hub spúšťa failover cez DRPlacementControl a drží placementy a policies. Keď padne DC s hubom, failover nemá kto spustiť, preto musí byť hub odolnejší než to, čo chráni.",
+ items:[{h:"Umiestnenie hubu",b:"Dokumentácia ODF: aktívny hub pri primárnom clusteri a pasívny pri sekundárnom, alebo aktívny hub v neutrálnej tretej lokalite. Hub recovery pre Metro-DR je v ODF 4.18 Technology Preview."},
+  {h:"Active/passive hub cez OADP",b:"Aktívny hub zálohuje do S3; pasívny priebežne obnovuje pasívne dáta (syncRestoreWithNewBackups, predvolený interval 30 min). Aktivačné dáta sa obnovia až pri failoveri. Od ACM 2.7 sa managed clustery vedia znova pripojiť automaticky."},
+  {h:"Runbook riadený labelom",b:"Label spravovaný v Gite (active / standby / failover) aplikovaný cez Policy prepína BackupSchedule a BackupStorageLocation medzi hubmi. Použiteľné ako hotový runbook pre zákazníka."},
+  {h:"GitOps ako zdroj pravdy",b:"Stav aplikácií v Gite, DR ako overlay nad bežným stavom. Držte break-glass cestu (oc apply -k overlays/dr) pre prípad, že Git alebo Argo CD nie sú dostupné."},
+  {h:"Spúšťanie failoveru",b:"Red Hat ho štandardne necháva ručný. Event-Driven Ansible môže volať ACM API, ale návrh musí riešiť ochranu proti falošnému triggeru pri partition."}]},
+virt:{title:"OpenShift Virtualization",lead:"VM sú najčastejší dôvod, prečo zákazník chce stretched cluster: bežia v jednej inštancii, nemajú aplikačnú replikáciu a z VMware sú zvyknuté na vSphere Metro Storage Cluster. Ekvivalent v OpenShifte je stretched 1+1+1 so synchrónnym storage, a rovnako ako vMSC potrebuje tretiu lokalitu.",
+ items:[{h:"Stretched cluster pre VM",b:"Symetrická replikácia storage, stretched VLAN, latencia ~5 ms a witness site. Tretiu lokalitu vyžaduje etcd a zvyčajne hostí jeden control plane node. Reštartované VM majú RPO 0."},
+  {h:"Bez fencingu sa VM nepresunú bezpečne",b:"Node Health Check + Fence Agents Remediation (odporúčané pre Virtualization) s out-of-service taintom. Bez ladenia trvá preplánovanie z nedostupného nodu zhruba 12 minút, s ladením okolo 1,5 minúty."},
+  {h:"Restart storm",b:"Po strate DC OpenShift preplánuje všetky VM naraz. Riaďte poradie a tempo (node selectory, priority) a držte ~100 % kapacity v preživšom DC."},
+  {h:"Dva clustery pre VM",b:"Jednosmerná replikácia poľa alebo ODF Regional/Metro-DR, stav VM v GitOps ako DR overlay. Cross-cluster live migration (4.20, Tech Preview) slúži na plánované presuny, nie na DR."},
+  {h:"4–5 control plane nodes",b:"Zavedené pre dvojlokalitné VM nasadenia na bare metal (2+2, 3+2). Pri strate DC prežijú dve kópie etcd, obnova však zostáva ručná."},
+  {h:"Subskripcie",b:"Stretched cluster vyžaduje obe lokality plne subskribované; warm DR lokalita môže držať vypnuté VM. Podmienky pre DR kapacitu overte so sales."}]},
+discovery:{title:"Otázky pre zákazníka",lead:"Tieto odpovede rozhodnú medzi variantmi viac než čokoľvek iné. Prvé tri sú kľúčové.",
+ items:[{k:1,t:"Čo pre vás znamená „HA“: aké RPO a RTO potrebujú jednotlivé aplikačné tiery, a spúšťa failover automatika, alebo človek?"},
+  {k:1,t:"Existuje tretia lokalita? Prevádzkujete už witness, mediator alebo tiebreaker pre storage alebo vSAN? Môže tam stáť server alebo VM pre control plane node či Ceph arbiter?"},
+  {k:1,t:"Kde ležia stavové dáta: databázy mimo OpenShift, PV v OpenShifte, alebo VM?"},
+  {k:0,t:"Platforma: bare metal, vSphere, alebo iná? (4–5 control plane nodes len na bare metal; na vSphere hrá rolu vSphere HA a vMSC.)"},
+  {k:0,t:"Sieť medzi DC: vzdialenosť, RTT a jitter, šírka pásma, stretched L2 áno/nie, redundancia trás."},
+  {k:0,t:"Storage: ODF, alebo pole s CSI driverom? Ktorý dodávateľ a podporuje CSI VolumeReplication?"},
+  {k:0,t:"Existujúce GSLB a DNS (F5, Infoblox) a kto ich spravuje?"},
+  {k:0,t:"Platformové závislosti v oboch DC: IdP, registry, Git, Vault, S3, monitoring."},
+  {k:0,t:"Regulácia: DORA, požiadavky regulátora alebo interná politika na oddelené zálohy a frekvenciu DR testov."},
+  {k:0,t:"Licencie: OpenShift Platform Plus, alebo OCP + ACM + ODF zvlášť? DR funkcie ODF vyžadujú ODF Advanced."}],
+ progress:"{done} z {total} zodpovedaných"},
+sources:{title:"Zdroje",lead:"Dokumentácia Red Hat a blogy, z ktorých sprievodca vychádza.",groups:{docs:"Dokumentácia Red Hat",blogs:"Blogy a články Red Hat",other:"Prezentácie a ostatné"}}
+};
+I18N.pl = {
+nav:{principle:"Istota problemu",variants:"Warianty",config:"Konfigurator",data:"Dane i storage",traffic:"Ruch",mgmt:"Zarządzanie",virt:"Wirtualizacja",discovery:"Discovery",sources:"Źródła"},
+hero:{kicker:"Interaktywny przewodnik",title:"Wysoka dostępność OpenShift w dwóch centrach danych",lead:"Co klaster rozciągnięty między dwiema lokalizacjami potrafi, a czego nie, dlaczego liczy się trzecia lokalizacja i która architektura odpowiada Twojemu RPO, danym i workloadom. Wypróbuj symulator i pozwól konfiguratorowi wybrać wariant."},
+footer:"Stan na 18.10.2026. Materiał informacyjny, nie oficjalne stanowisko wsparcia Red Hat; możliwości produktów zmieniają się między wersjami, sprawdź je w aktualnej dokumentacji. Na podstawie dokumentacji Red Hat (OCP 4.21 etcd guidance, ODF 4.18 DR, ACM) i blogów Red Hat. Wartości RPO/RTO to typowe zakresy; zmierz je własnym testem.",
+principle:{
+ title:"Dlaczego dwie lokalizacje to za mało dla jednego klastra",
+ lead:"OpenShift przechowuje stan w etcd, które wymaga zgody większości członków. Przy podziale na dwie lokalizacje większość zawsze ma jedna z nich. Gdy ta lokalizacja padnie, control plane przestaje zapisywać.",
+ hadr:{title:"HA to nie DR",body:"HA pokrywa awarię komponentu wewnątrz jednej failure domain i odtwarza się automatycznie. DR pokrywa utratę całej domeny (centrum danych) i mierzy się je w RPO (utracone dane) i RTO (czas przestoju). Trzy węzły control plane w jednym DC to HA, nie DR."},
+ drtwo:{title:"DR to dwa problemy",body:"Red Hat nie chroni samego klastra. Chroni ciągłość aplikacji przez ich failover na inny klaster. Oznacza to rozwiązanie routingu ruchu i replikacji danych. Aplikacje stateless potrzebują tylko pierwszego, stanowe obu."},
+ disposable:{title:"Klaster jest disposable, dane nie",lead:"Kubernetes zakłada, że klaster można odbudować. Z GitOps każdy klaster, operator i aplikacja są odtwarzalne z Gita. Czego z Gita nie da się odbudować, to stan aplikacji. DR projektuj wokół niego.",
+  cols:[{h:"Odtwarzalne z Gita",items:["Konfiguracja instalacji klastra i operatory day-2","Namespaces, Deployments, Routes, Policies","Secrets i konfiguracja przez Vault / sealed secrets","Placementy ACM, overlaye DR"]},
+        {h:"Trzeba chronić",items:["Bazy danych (w OpenShift i poza nim)","Persistent volumes i dyski VM","Logi komunikatów (Kafka), object storage","Certyfikaty, klucze, stan IdP"]},
+        {h:"Konsekwencja",items:["Budżet na HA przeznacz na replikację danych, nie na rozciąganie control plane","Drugiemu klastrowi zbudowanemu z Gita można zaufać taniej niż rozciągniętemu","Kopie zapasowe muszą istnieć obok replikacji: replikacja przenosi też uszkodzenia"]}]},
+ blast:{title:"Blast radius",body:"Klaster rozciągnięty łączy oba DC w jedną failure domain. Błędny upgrade, zła MachineConfig, wygasłe certyfikaty lub uszkodzone etcd uderzają w obie lokalizacje naraz. Dwa klastry izolują te błędy i pozwalają upgrade'ować jeden jako canary. Partycja sieci jest gorsza niż czysta awaria: pody w odizolowanej lokalizacji działają dalej bez kontroli, więc pody stanowe i VM wymagają fencingu, zanim uruchomi się je gdzie indziej."}
+},
+sim:{
+ title:"Symulator quorum etcd",lead:"Wybierz topologię i kliknij lokalizację, aby ją wyłączyć. Obserwuj, co dzieje się z API i workloadami.",
+ topology:"Topologia",topos:{"2+1":"Stretched 2+1 (3 control plane)","1+1+1":"Stretched 1+1+1 (trzecia lokalizacja)","2+2":"Stretched 2+2 (bare metal)","3+2":"Stretched 3+2 (bare metal)","two":"Dwa niezależne klastry"},
+ sites:{dc1:"Centrum danych 1",dc2:"Centrum danych 2",s3:"Trzecia lokalizacja"},hint:"Kliknij lokalizację, aby ją wyłączyć",isolate:"Przerwij łącze DC1–DC2",isolateOn:"Łącze przerwane (DC2 odizolowane)",reset:"Reset",cp:"CP",workers:"workery",cluster:"Klaster",none:"nieużywana",
+ stats:{members:"Żywe członki etcd",quorum:"Wymagane quorum",api:"Kubernetes API",workloads:"Workloady",recovery:"Odtworzenie"},
+ api:{rw:"odczyt/zapis",ro:"tylko odczyt",down:"niedostępne"},
+ out:{
+  ok:"W porządku. Wszystkie lokalizacje działają, API zapisuje, scheduler może przenosić pody.",
+  minor:"Quorum utrzymane. Pody z utraconej lokalizacji są przeplanowywane do ocalałej po timeoutach węzłów (domyślnie ok. 5 min). Wolumeny RWO i VM wymagają najpierw fencingu.",
+  major:"Quorum utracone. API jest tylko do odczytu: działające pody działają dalej, ale nic nie można przeplanować, skalować ani aktualizować. Admin musi uruchomić quorum-restore.sh na ocalałym węźle; ostatnie zapisy mogą być utracone. Pozostaje {copies} kopia/kopie etcd.",
+  all:"Wszystkie lokalizacje niedostępne. Odtworzenie z kopii etcd lub odbudowa klastra z Gita.",
+  partition:"Partycja. DC1 utrzymuje quorum i po timeoutach przeplanowuje pody z DC2, podczas gdy pody w DC2 wciąż działają bez kontroli. Bez fencingu pod stanowy lub VM może działać podwójnie na tym samym replikowanym wolumenie.",
+  partitionMajorLost:"Partycja. DC2 jest odizolowane, a DC1 nie ma quorum: API tylko do odczytu po obu stronach. Ręczne odtworzenie w każdym przypadku.",
+  partition111:"Partycja. Trzecia lokalizacja rozstrzyga: quorum utrzymuje to DC, z którym ma łączność. Odizolowane DC nadal uruchamia pody bez kontroli, fencing jest konieczny.",
+  twoOk:"Oba klastry w porządku. GSLB kieruje ruch do obu (lub do aktywnego). Dane replikują się między nimi.",
+  twoLost:"Klaster w {site} jest niedostępny. Drugi klaster nie jest dotknięty. GSLB przekierowuje ruch; aplikacje stanowe przełącza failover ACM z RPO zależnym od typu replikacji (zob. konfigurator).",
+  twoPartition:"Łącze przerwane. Każdy klaster działa samodzielnie. Replikacja zatrzymuje się; failover wymaga huba ACM dostępnego z ocalałej strony.",
+  recoverNone:"niepotrzebne",recoverAuto:"automatyczne",recoverManual:"ręczne: quorum-restore.sh, potem odbudowa utraconych węzłów",recoverFailover:"failover ACM (ręczne wyzwolenie), GSLB",recoverBackup:"kopia etcd lub odbudowa z Gita"
+ }
+},
+variants:{
+ title:"Siedem sposobów na OpenShift w dwóch DC",lead:"Kliknij kartę, aby zobaczyć szczegóły. A i B rozciągają jeden klaster bez trzeciej lokalizacji, C z nią, D do G używają dwóch niezależnych klastrów.",tableTitle:"Obok siebie",
+ cols:{dcLoss:"Utrata całego DC",rpo:"RPO",rto:"RTO",site3:"Trzecia lokalizacja",latency:"Latencja między DC",verdict:"Ocena"},
+ map:{title:"Mapa RPO i RTO",lead:"Gdzie leży każdy wariant. Lewy dolny róg jest lepszy; RPO 0 z automatycznym odtworzeniem osiągają tylko C i E, oba wymagają trzeciej lokalizacji.",rpo:"RPO (utracone dane)",rto:"RTO (czas odtworzenia)",scale:["0","sekundy","minuty","godziny"]},
+ items:[
+  {id:"A",name:"Stretched 2+1",short:"Jeden klaster, dwa węzły control plane w DC1, jeden w DC2",dcLoss:"Utrata DC2: w porządku. Utrata DC1: API tylko do odczytu",rpo:"etcd: ostatnie zapisy zagrożone; dane wg storage",rto:"Ręczne, zależne od runbooka",site3:"Nie",latency:"etcd peer RTT < 100 ms (zalecane < 5 ms); z ODF < 10 ms",verdict:"Niezalecane",tone:"crit",
+   detail:["Wspierane przez Red Hat, ale dokumentacja opisuje to jako jedną failure domain, która nie może zastąpić planu DR.","Utrata lokalizacji większościowej przełącza API w read-only. Odtworzenie to quorum-restore.sh na ostatnim węźle w DC2 z ryzykiem utraty zapisów, które tam nie dotarły.","Wymaga bezpośredniej łączności IP, jednolitego MTU i VIP dla API i ingress; oddzielne sieci L3 wymagają zewnętrznego load balancera.","Każde zakłócenie (partycja, niezgodność MTU, skok latencji, jitter) trzeba przetestować przed produkcją."]},
+  {id:"B",name:"Stretched 2+2 lub 3+2",short:"Cztery lub pięć węzłów control plane, tylko bare metal, OCP 4.17+",dcLoss:"Jak A, ale przeżywają dwie kopie etcd",rpo:"Jak A, mniejsze ryzyko",rto:"Ręczne",site3:"Nie",latency:"Jak A; tylko bare metal",verdict:"Kompromis dla VM bez trzeciej lokalizacji",tone:"warn",
+   detail:["Red Hat wprowadził 4 i 5 węzłów control plane właśnie dla dwulokalizacyjnych wdrożeń VM na bare metal.","Quorum przy utracie DC ginie tak samo, ale w ocalałej lokalizacji zostają dwie kopie etcd read-only, więc ręczne odtworzenie ma zapas.","Wdrażane jako 3 węzły i skalowane w dniu 2 (Assisted lub Agent-based installer).","Więcej węzłów control plane nieznacznie obniża przepustowość i zwiększa latencję."]},
+  {id:"C",name:"Stretched 1+1+1",short:"Jeden klaster, jeden węzeł control plane na lokalizację, trzecia lokalizacja z głosem rozstrzygającym",dcLoss:"Control plane przeżywa automatycznie",rpo:"0 z synchronicznym storage",rto:"Minuty: pody RWX ~6–8 min, RWO i VM po fencingu",site3:"Tak, pełny węzeł control plane",latency:"Strefy danych < 10 ms (ODF); arbiter wg limitów etcd",verdict:"Tylko z trzecią lokalizacją i planem DR",tone:"good",
+   detail:["Topologia zalecana przez Red Hat dla klastra w wielu lokalizacjach: jeden członek control plane na lokalizację, trzy lokalizacje.","Z ODF stretch cluster (dwie strefy danych + strefa arbitra) lub macierzą metro dane mają RPO 0.","To wciąż jedna failure domain: upgrade'y, błędy konfiguracji i wygaśnięcie certyfikatów uderzają w oba DC. Trzymaj kopie OADP poza klastrem lub drugi klaster.","Trzecia lokalizacja potrzebuje prawdziwego węzła, nie lekkiego witnessa: standardowy klaster nie ma arbitra etcd-only (Two-Node with Arbiter to topologia edge ograniczona do dwóch workerów)."]},
+  {id:"D",name:"Dwa klastry + Regional-DR",short:"Niezależne klastry, asynchroniczna replikacja wolumenów (ODF, macierz lub aplikacja)",dcLoss:"Failover aplikacji przez ACM",rpo:"> 0: interwał replikacji (od 1 min) i change rate",rto:"Minuty, wyzwalane ręcznie",site3:"Nie (hub najlepiej neutralny)",latency:"Bez limitu",verdict:"Domyślne dla danych stanowych bez trzeciej lokalizacji",tone:"good",
+   detail:["ODF Regional-DR asynchronicznie mirroruje wolumeny RBD między dwoma klastrami ODF; ACM orkiestruje failover i failback per aplikacja.","Wymaga ODF Advanced i ACM. OpenShift Platform Plus zawiera tylko ODF Essentials.","Alternatywy: asynchroniczna replikacja macierzy z CSI VolumeReplication, VolSync lub replikacja w aplikacji (DB streaming, Kafka MirrorMaker 2).","Failover to operacja wrażliwa i domyślnie pozostaje ręczna; Event-Driven Ansible może ją zautomatyzować z zabezpieczeniem przed fałszywym wyzwoleniem."]},
+  {id:"E",name:"Dwa klastry + Metro-DR",short:"Niezależne klastry nad zewnętrznym Ceph stretch cluster z arbitrem",dcLoss:"Failover aplikacji przez ACM",rpo:"0",rto:"Minuty",site3:"Tak, arbiter Ceph (~100 ms RTT)",latency:"< 10 ms",verdict:"RPO 0 z dwoma klastrami",tone:"good",
+   detail:["Zewnętrzny Red Hat Ceph Storage rozciągnięty na oba DC z replikacją synchroniczną; arbiter monitora w trzeciej lokalizacji do ~100 ms.","Tylko all-flash, erasure coding niewspierany, jedna DRPolicy na rozwiązanie.","Hub recovery dla Metro-DR jest w ODF 4.18 w Technology Preview.","Odpowiednik z macierzą metro: replikacja synchroniczna plus witness, automatyzacja failoveru zależna od wsparcia CSI dostawcy."]},
+  {id:"F",name:"Dwa klastry active/active",short:"GSLB kieruje ruch do obu klastrów naraz",dcLoss:"GSLB przekierowuje ruch",rpo:"Stateless 0; dane stanowe wg aplikacji",rto:"Sekundy do minut (health check + DNS TTL)",site3:"Nie (bazy konsensusowe: tak)",latency:"Wg aplikacji",verdict:"Domyślne dla stateless",tone:"good",
+   detail:["Oba klastry obsługują ruch; globalny load balancer sprawdza route w każdym klastrze.","Dane stanowe replikuje sama aplikacja: replikacja DB, Kafka MirrorMaker 2 lub baza poza OpenShift.","Bazy konsensusowe (CockroachDB, YugabyteDB) potrzebują trzech failure domain, tak jak etcd. Dwa DC im nie wystarczą.","Oba klastry potrzebują tych samych zależności platformowych: IdP, registry, Git, Vault, S3, monitoring."]},
+  {id:"G",name:"Dwa klastry + backup/restore",short:"Kopie OADP do object storage, odtworzenie na drugim klastrze",dcLoss:"Odtworzenie z kopii",rpo:"Częstotliwość kopii",rto:"Godziny",site3:"Nie",latency:"Bez limitu",verdict:"Uzupełnienie, nie podstawowe DR",tone:"info",
+   detail:["OADP (Velero) kopiuje obiekty Kubernetes i persistent volumes (CSI snapshot + data mover) do S3.","Red Hat nie zaleca kopii jako jedynej strategii DR: odtworzenia są rzadkie, wolne i słabo testowane.","Kopie należą obok każdego innego wariantu: replikacja przenosi też logiczne uszkodzenia i usunięcia.","DORA art. 12 wymaga odtwarzania do fizycznie i logicznie oddzielonych systemów oraz okresowych testów odtwarzania."]}
+ ]
+},
+config:{
+ title:"Który wariant pasuje do Ciebie?",lead:"Odpowiedz na sześć pytań. Rekomendacja podąża za drzewem decyzyjnym z raportu: gdzie są dane, wymagane RPO, trzecia lokalizacja, latencja, platforma i czy jeden klaster jest warunkiem.",
+ q:{
+  stateful:{label:"Gdzie znajdują się dane stanowe?",opts:{pv:"Persistent volumes w OpenShift",vm:"Maszyny wirtualne (OpenShift Virtualization)",ext:"Poza OpenShift (zewnętrzna DB, mainframe)"}},
+  rpo:{label:"Jakiego RPO potrzebują aplikacje krytyczne?",opts:{zero:"Zerowa utrata danych",min:"Minuty",hour:"Godziny (wystarczy kopia)"}},
+  site3:{label:"Czy dostępna jest trzecia lokalizacja?",yes:"Tak (pomieszczenie, oddział, tenant w chmurze)",no:"Nie"},
+  latency:{label:"Latencja round-trip między DC"},
+  platform:{label:"Platforma",opts:{bm:"Bare metal",vs:"vSphere",other:"Inna / chmura"}},
+  single:{label:"Czy musi to być jeden klaster?",yes:"Tak, klient nalega",no:"Nie, dwa klastry są akceptowalne"}
+ },
+ result:{title:"Rekomendacja",primary:"Wariant główny",also:"Połącz z",warnings:"Uwaga na",needs:"Będziesz potrzebować",always:"Zawsze: kopie OADP poza klastrem, GSLB, odporny hub ACM, regularne testy DR."},
+ texts:{
+  extF:"Dane stanowe są poza OpenShift, więc OpenShift niesie warstwę stateless. Uruchom dwa klastry active/active za GSLB, a DR bazy zostaw bazie (np. Data Guard, Always On).",
+  minD:"RPO w minutach jest osiągalne bez trzeciej lokalizacji. Dwa klastry z Regional-DR, asynchroniczną replikacją macierzy lub replikacją w aplikacji; failover per aplikacja przez ACM.",
+  hourG:"Kopie spełniają RPO. Dwa klastry zbudowane z Gita, kopie OADP do S3 dostępnego z obu DC, odtworzenie na ocalałym klastrze.",
+  zeroNoSiteSingleBm:"RPO 0, brak trzeciej lokalizacji i jeden klaster jako warunek: stretched 3+2 na bare metal jest najmniej złą opcją. Quorum z większościowym DC ginie tak samo; dwie ocalałe kopie etcd czynią ręczne odtworzenie bezpieczniejszym.",
+  zeroNoSiteSingle:"RPO 0, brak trzeciej lokalizacji i jeden klaster jako warunek: zostaje tylko stretched 2+1 jako świadomie przyjęte ryzyko. Oznacz większościowe DC jako główne i przećwicz quorum-restore.sh.",
+  zeroNoSite:"RPO 0 bez trzeciej lokalizacji nie da się bezpiecznie zautomatyzować. Użyj synchronicznej replikacji macierzy z ręcznym failoverem albo zweryfikuj RPO: minuty zwykle otwierają Regional-DR.",
+  zeroSiteSingle:"RPO 0, trzecia lokalizacja, jeden klaster: stretched 1+1+1 z jednym węzłem control plane na lokalizację i synchronicznym storage (ODF stretch cluster lub macierz metro). Obok trzymaj cel DR.",
+  zeroSiteE:"RPO 0 z dwoma klastrami: Metro-DR nad zewnętrznym Ceph stretch cluster, arbiter w trzeciej lokalizacji. Albo macierz metro z witnessem i replikacją CSI.",
+  alsoF:"F dla usług stateless (active/active za GSLB)",alsoG:"G: kopie OADP poza klastrem",alsoD:"D dla mniej krytycznych danych stanowych (async, bez trzeciej lokalizacji)",alsoDR:"Cel DR dla klastra rozciągniętego: drugi klaster lub przynajmniej kopie poza klastrem",
+  wLat100:"Latencja powyżej 100 ms: rozciągnięty control plane jest poza limitami etcd. Możliwe są tylko dwa klastry.",
+  wLat10:"Latencja powyżej 10 ms: ODF stretch cluster i Metro-DR nie są wspierane. Warianty synchroniczne wymagają macierzy, która to toleruje, albo przejdź na async.",
+  wLat5:"Latencja powyżej 5 ms: powyżej zalecenia Red Hat dla klastra rozciągniętego. Przed produkcją przetestuj partycje, jitter i etcd apply times.",
+  wVm:"VM działają w jednej instancji: fencing (Node Health Check + Fence Agents Remediation) jest wymagany, zanim VM uruchomi się gdzie indziej. Kontroluj restart storm i trzymaj ~100% wolnej pojemności w ocalałym DC.",
+  wVsphere:"Na vSphere z metro storage cluster vSphere HA może zrestartować VM control plane w drugim DC i przywrócić quorum bez quorum-restore.sh. Przetestuj to i potwierdź wsparcie z Red Hat.",
+  wBmOnly:"4 lub 5 węzłów control plane dostępne tylko na bare metal.",
+  wConsensus:"Active/active z bazą konsensusową wymaga trzech failure domain; z dwoma DC planuj dla tej bazy active/passive.",
+  wHub:"Umiejscowienie huba ACM: w trzeciej lokalizacji albo huby active/passive z kopią OADP do S3. Bez dostępnego huba nie uruchomisz failoveru ODF DR.",
+  wSingle:"Jeden klaster rozciągnięty to jedna failure domain. Upgrade'y i błędy konfiguracji uderzają w oba DC; miej plan rollbacku i kopie poza klastrem.",
+  nOdfAdv:"Subskrypcje ODF Advanced + ACM",nGslb:"Globalny load balancer (F5, Infoblox lub Connectivity Link z CoreDNS)",nGit:"Repozytorium GitOps z overlayami DR i ścieżką break-glass",nS3:"S3 dostępne z obu DC dla OADP i kopii huba ACM",nFence:"BMC z Redfish do fencingu",nSite3:"Serwer lub VM w trzeciej lokalizacji (węzeł control plane lub arbiter Ceph)",nDeps:"Zależności platformowe w obu DC: DNS, NTP, IdP, registry, Git, Vault, monitoring",nTest:"Udokumentowane testy: utrata DC, partycja, MTU, skok latencji",nArray:"Macierz z replikacją synchroniczną i wsparciem CSI VolumeReplication"
+ }
+},
+data:{title:"Dane i storage decydują o RPO",lead:"OpenShift nie wyznacza osiągalnego RPO; robią to storage i aplikacja. Najpierw ustal, gdzie jest stan. W bankach często w bazach poza OpenShift, a OpenShift niesie głównie warstwę stateless.",
+ items:[{h:"ODF stretch cluster",b:"Jeden klaster OpenShift, dwie strefy danych (< 10 ms RTT) i strefa arbitra. Wymaga trzech węzłów control plane w trzech strefach i co najmniej czterech workerów równo w strefach danych."},
+  {h:"ODF Metro-DR",b:"Dwa klastry nad zewnętrznym Red Hat Ceph Storage stretch cluster. RPO 0, tylko all-flash, jedna DRPolicy, arbiter w trzeciej lokalizacji do ~100 ms."},
+  {h:"ODF Regional-DR",b:"Asynchroniczny mirroring RBD między dwoma klastrami ODF, interwał od 1 minuty. RPO > 0, bez limitu odległości, failover per aplikacja przez ACM."},
+  {h:"Licencje",b:"Wszystkie trzy warianty ODF DR wymagają ODF Advanced; Metro-DR i Regional-DR dodatkowo ACM. OpenShift Platform Plus zawiera tylko ODF Essentials."},
+  {h:"Macierze z replikacją CSI",b:"Hitachi GAD, NetApp, Pure, Dell, IBM. Replikacja wolumenów nie jest ustandaryzowana w CSI, więc automatyzacja failoveru zależy od dostawcy: brak wsparcia CSI, CSI VolumeReplication lub także replikacja metadanych namespace. Większość rozwiązań metro wymaga witnessa w trzeciej lokalizacji."},
+  {h:"Replikacja w aplikacji",b:"DB streaming replication, Kafka MirrorMaker 2. Aplikacja wie, co replikuje, i raportuje stan. Synchroniczny konsensus znów wymaga trzech lokalizacji."},
+  {h:"VolSync (część ACM)",b:"Asynchroniczne kopie PV między klastrami bez ODF. Pasuje do mniej krytycznych danych."},
+  {h:"Kopie zawsze obok replikacji",b:"Replikacja przenosi też logiczne uszkodzenia i usunięcia. DORA art. 12 wymaga odtwarzania do fizycznie i logicznie oddzielonych systemów i okresowych testów."}]},
+traffic:{title:"Routing ruchu i łączność",lead:"Globalny load balancer jest obowiązkowy w każdym wariancie z dwoma klastrami; dokumentacja wymaga go też dla klastra rozciągniętego. W active/active health check GSLB i DNS TTL wyznaczają RTO.",
+ items:[{h:"Istniejący GSLB",b:"F5 BIG-IP DNS, Infoblox i podobne to najszybsza droga: wide IP per aplikacja, health check na route w każdym klastrze."},
+  {h:"Red Hat Connectivity Link (Kuadrant)",b:"DNSPolicy na Gateway API deklaratywnie zarządza globalnymi rekordami DNS. Integracja z CoreDNS dla DNS on-prem jest GA od 1.3 (Tech Preview w 1.1). Wymaga delegacji strefy z firmowego DNS do VIP CoreDNS."},
+  {h:"East-west między klastrami",b:"Submariner (część ACM) w warstwie sieci, Red Hat Service Interconnect (Skupper) w warstwie aplikacji lub OpenShift Service Mesh 3 w federacji multi-primary z preferencją lokalnej instancji."},
+  {h:"Sieć klastra rozciągniętego",b:"Bezpośrednia łączność IP między węzłami, jednolite MTU, VIP on-prem (keepalived) dla API i ingress zakładające jeden segment L2. Oddzielne sieci L3 per DC wymagają zewnętrznego load balancera."},
+  {h:"Zależności platformowe w obu DC",b:"DNS, NTP, IdP (AD/LDAP), image registry (Quay lub mirror), Git, Vault i S3 na kopie. Inaczej klaster DR nie uruchomi aplikacji, nawet mając dane."}]},
+mgmt:{title:"Warstwa zarządzania musi przetrwać awarię",lead:"Hub ACM wyzwala failover przez DRPlacementControl i trzyma placementy oraz policies. Gdy padnie DC z hubem, nikt nie uruchomi failoveru, więc hub musi być odporniejszy niż to, co chroni.",
+ items:[{h:"Umiejscowienie huba",b:"Dokumentacja ODF: aktywny hub przy klastrze głównym i pasywny przy zapasowym, albo aktywny hub w neutralnej trzeciej lokalizacji. Hub recovery dla Metro-DR jest w ODF 4.18 w Technology Preview."},
+  {h:"Hub active/passive przez OADP",b:"Aktywny hub kopiuje do S3; pasywny na bieżąco odtwarza dane pasywne (syncRestoreWithNewBackups, domyślnie co 30 min). Dane aktywacyjne odtwarzane są dopiero przy failoverze. Od ACM 2.7 klastry zarządzane mogą ponownie podłączyć się automatycznie."},
+  {h:"Runbook sterowany labelem",b:"Label zarządzany w Gicie (active / standby / failover) nakładany przez Policy przełącza BackupSchedule i BackupStorageLocation między hubami. Nadaje się jako gotowy runbook dla klienta."},
+  {h:"GitOps jako źródło prawdy",b:"Stan aplikacji w Gicie, DR jako overlay nad stanem normalnym. Trzymaj ścieżkę break-glass (oc apply -k overlays/dr) na wypadek, gdy Git lub Argo CD są niedostępne."},
+  {h:"Wyzwalanie failoveru",b:"Red Hat domyślnie zostawia je ręczne. Event-Driven Ansible może wywołać API ACM, ale projekt musi chronić przed fałszywym wyzwoleniem podczas partycji."}]},
+virt:{title:"OpenShift Virtualization",lead:"VM to najczęstszy powód, dla którego klient chce klastra rozciągniętego: działają w jednej instancji, nie mają replikacji aplikacyjnej, a z VMware przywykły do vSphere Metro Storage Cluster. Odpowiednik w OpenShift to stretched 1+1+1 z synchronicznym storage, i tak jak vMSC wymaga trzeciej lokalizacji.",
+ items:[{h:"Klaster rozciągnięty dla VM",b:"Symetryczna replikacja storage, rozciągnięte VLAN-y, latencja ~5 ms i witness site. Trzecią lokalizację wymusza etcd i zwykle hostuje ona jeden węzeł control plane. Zrestartowane VM mają RPO 0."},
+  {h:"Bez fencingu VM nie przeniosą się bezpiecznie",b:"Node Health Check + Fence Agents Remediation (zalecane dla Virtualization) z taintem out-of-service. Bez strojenia przeplanowanie z niedostępnego węzła trwa ok. 12 minut, ze strojeniem ok. 1,5 minuty."},
+  {h:"Restart storm",b:"Po utracie DC OpenShift przeplanowuje wszystkie VM naraz. Kontroluj kolejność i tempo (node selectory, priorytety) i trzymaj ~100% pojemności w ocalałym DC."},
+  {h:"Dwa klastry dla VM",b:"Jednokierunkowa replikacja macierzy lub ODF Regional/Metro-DR, stan VM w GitOps jako overlay DR. Cross-cluster live migration (4.20, Tech Preview) służy do planowanych przenosin, nie do DR."},
+  {h:"4–5 węzłów control plane",b:"Wprowadzone dla dwulokalizacyjnych wdrożeń VM na bare metal (2+2, 3+2). Przy utracie DC przeżywają dwie kopie etcd, ale odtworzenie pozostaje ręczne."},
+  {h:"Subskrypcje",b:"Klaster rozciągnięty wymaga pełnej subskrypcji obu lokalizacji; lokalizacja warm DR może trzymać wyłączone VM. Warunki pojemności DR potwierdź ze sprzedażą."}]},
+discovery:{title:"Pytania do klienta",lead:"Te odpowiedzi rozstrzygają między wariantami bardziej niż cokolwiek innego. Pierwsze trzy są kluczowe.",
+ items:[{k:1,t:"Co dla Was znaczy „HA”: jakiego RPO i RTO potrzebuje każdy tier aplikacji i czy failover wyzwala automat, czy człowiek?"},
+  {k:1,t:"Czy istnieje trzecia lokalizacja? Czy działa już witness, mediator lub tiebreaker dla storage lub vSAN? Czy może tam stanąć serwer lub VM dla węzła control plane albo arbitra Ceph?"},
+  {k:1,t:"Gdzie są dane stanowe: bazy poza OpenShift, PV w OpenShift czy VM?"},
+  {k:0,t:"Platforma: bare metal, vSphere czy inna? (4–5 węzłów control plane tylko na bare metal; na vSphere liczą się vSphere HA i vMSC.)"},
+  {k:0,t:"Sieć między DC: odległość, RTT i jitter, przepustowość, rozciągnięte L2 tak/nie, redundancja tras."},
+  {k:0,t:"Storage: ODF czy macierz ze sterownikiem CSI? Który dostawca i czy wspiera CSI VolumeReplication?"},
+  {k:0,t:"Istniejący GSLB i DNS (F5, Infoblox) i kto nimi zarządza?"},
+  {k:0,t:"Zależności platformowe w obu DC: IdP, registry, Git, Vault, S3, monitoring."},
+  {k:0,t:"Regulacje: DORA, wymagania regulatora lub polityka wewnętrzna dot. oddzielonych kopii i częstotliwości testów DR."},
+  {k:0,t:"Licencje: OpenShift Platform Plus czy OCP + ACM + ODF osobno? Funkcje DR ODF wymagają ODF Advanced."}],
+ progress:"{done} z {total} odpowiedzianych"},
+sources:{title:"Źródła",lead:"Dokumentacja Red Hat i blogi, na których opiera się przewodnik.",groups:{docs:"Dokumentacja Red Hat",blogs:"Blogi i artykuły Red Hat",other:"Prezentacje i inne"}}
+};
+I18N.ro = {
+nav:{principle:"Esența problemei",variants:"Variante",config:"Configurator",data:"Date și storage",traffic:"Trafic",mgmt:"Management",virt:"Virtualizare",discovery:"Discovery",sources:"Surse"},
+hero:{kicker:"Ghid interactiv",title:"Înaltă disponibilitate OpenShift în două centre de date",lead:"Ce poate și ce nu poate un cluster întins pe două locații, de ce contează a treia locație și ce arhitectură se potrivește cu RPO-ul, datele și workload-urile dumneavoastră. Încercați simulatorul, apoi lăsați configuratorul să aleagă o variantă."},
+footer:"Actualizat la 18.10.2026. Material informativ, nu o declarație oficială de suport Red Hat; capabilitățile produselor se schimbă între versiuni, verificați-le în documentația actuală. Bazat pe documentația Red Hat (OCP 4.21 etcd guidance, ODF 4.18 DR, ACM) și pe blogurile Red Hat. Valorile RPO/RTO sunt intervale tipice; măsurați-le în propriul test.",
+principle:{
+ title:"De ce două locații nu ajung pentru un singur cluster",
+ lead:"OpenShift își păstrează starea în etcd, care are nevoie de acordul majorității membrilor. Împărțit pe două locații, una dintre ele deține mereu majoritatea. Dacă acea locație cade, control plane-ul nu mai poate scrie.",
+ hadr:{title:"HA nu este DR",body:"HA acoperă căderea unei componente în interiorul unui failure domain și se recuperează automat. DR acoperă pierderea unui întreg domeniu (un centru de date) și se măsoară în RPO (date pierdute) și RTO (timp de nefuncționare). Trei noduri control plane într-un singur DC înseamnă HA, nu DR."},
+ drtwo:{title:"DR înseamnă două probleme",body:"Red Hat nu protejează clusterul în sine. Protejează continuitatea aplicațiilor prin failover pe un alt cluster. Asta înseamnă rezolvarea rutării traficului și a replicării datelor. Aplicațiile stateless au nevoie doar de prima, cele cu stare de ambele."},
+ disposable:{title:"Clusterul este disposable, datele nu",lead:"Kubernetes presupune că un cluster poate fi reconstruit. Cu GitOps, fiecare cluster, operator și aplicație se reproduce din Git. Ce nu se poate reconstrui din Git este starea aplicațiilor. Proiectați DR în jurul ei.",
+  cols:[{h:"Reconstruibil din Git",items:["Configurația de instalare a clusterului și operatorii day-2","Namespaces, Deployments, Routes, Policies","Secrets și configurație prin Vault / sealed secrets","Placement-uri ACM, overlay-uri DR"]},
+        {h:"Trebuie protejat",items:["Baze de date (în OpenShift sau în afara lui)","Persistent volumes și discurile VM","Jurnale de mesaje (Kafka), object storage","Certificate, chei, starea IdP"]},
+        {h:"Consecința",items:["Bugetul de HA merge în replicarea datelor, nu în întinderea control plane-ului","Un al doilea cluster construit din Git e mai ieftin de încredere decât unul întins","Backup-urile trebuie să existe lângă replicare: replicarea copiază și corupția"]}]},
+ blast:{title:"Blast radius",body:"Un cluster întins unește ambele DC într-un singur failure domain. Un upgrade greșit, o MachineConfig stricată, certificate expirate sau un etcd corupt lovesc ambele locații deodată. Două clustere izolează aceste erori și permit upgrade-ul unuia ca și canary. O partiție de rețea e mai rea decât o cădere curată: pod-urile din locația izolată rulează în continuare fără control, deci pod-urile cu stare și VM-urile au nevoie de fencing înainte de a fi pornite în altă parte."}
+},
+sim:{
+ title:"Simulator de quorum etcd",lead:"Alegeți o topologie și dați clic pe o locație pentru a o scoate din funcțiune. Urmăriți ce se întâmplă cu API-ul și cu workload-urile.",
+ topology:"Topologie",topos:{"2+1":"Stretched 2+1 (3 control plane)","1+1+1":"Stretched 1+1+1 (a treia locație)","2+2":"Stretched 2+2 (bare metal)","3+2":"Stretched 3+2 (bare metal)","two":"Două clustere independente"},
+ sites:{dc1:"Centrul de date 1",dc2:"Centrul de date 2",s3:"A treia locație"},hint:"Clic pe o locație pentru a o opri",isolate:"Întrerupe legătura DC1–DC2",isolateOn:"Legătură întreruptă (DC2 izolat)",reset:"Resetare",cp:"CP",workers:"workeri",cluster:"Cluster",none:"nefolosită",
+ stats:{members:"Membri etcd activi",quorum:"Quorum necesar",api:"Kubernetes API",workloads:"Workload-uri",recovery:"Recuperare"},
+ api:{rw:"citire/scriere",ro:"doar citire",down:"indisponibil"},
+ out:{
+  ok:"Sănătos. Toate locațiile funcționează, API-ul scrie, scheduler-ul poate muta pod-uri.",
+  minor:"Quorum păstrat. Pod-urile din locația pierdută sunt replanificate în locația supraviețuitoare după timeout-urile nodurilor (implicit cca 5 min). Volumele RWO și VM-urile au nevoie mai întâi de fencing.",
+  major:"Quorum pierdut. API-ul este doar pentru citire: pod-urile care rulează continuă, dar nimic nu poate fi replanificat, scalat sau actualizat. Un admin trebuie să ruleze quorum-restore.sh pe un nod supraviețuitor; ultimele scrieri pot fi pierdute. Rămân {copies} copie/copii etcd.",
+  all:"Toate locațiile sunt căzute. Restaurare din backup etcd sau reconstruire a clusterului din Git.",
+  partition:"Partiție. DC1 păstrează quorumul și, după timeout-uri, replanifică pod-urile din DC2, în timp ce pod-urile din DC2 rulează încă fără control. Fără fencing, un pod cu stare sau un VM poate rula de două ori pe același volum replicat.",
+  partitionMajorLost:"Partiție. DC2 este izolat și DC1 nu are quorum: API doar pentru citire de ambele părți. Recuperare manuală oricum.",
+  partition111:"Partiție. A treia locație decide: quorumul rămâne la DC-ul cu care are legătură. DC-ul izolat rulează pod-uri fără control, fencing-ul este obligatoriu.",
+  twoOk:"Ambele clustere sunt sănătoase. GSLB trimite traficul către ambele (sau către cel activ). Datele se replică între ele.",
+  twoLost:"Clusterul din {site} este căzut. Celălalt cluster nu este afectat. GSLB redirecționează traficul; aplicațiile cu stare fac failover prin ACM, cu RPO dat de tipul replicării (vezi configuratorul).",
+  twoPartition:"Legătură întreruptă. Fiecare cluster rulează pe cont propriu. Replicarea se oprește; failover-ul are nevoie de un hub ACM accesibil din partea supraviețuitoare.",
+  recoverNone:"nu este necesară",recoverAuto:"automată",recoverManual:"manuală: quorum-restore.sh, apoi reconstruirea nodurilor pierdute",recoverFailover:"failover ACM (declanșare manuală), GSLB",recoverBackup:"backup etcd sau reconstruire din Git"
+ }
+},
+variants:{
+ title:"Șapte moduri de a rula OpenShift în două DC",lead:"Dați clic pe un card pentru detalii. A și B întind un cluster fără a treia locație, C cu ea, D până la G folosesc două clustere independente.",tableTitle:"Una lângă alta",
+ cols:{dcLoss:"Pierderea unui DC întreg",rpo:"RPO",rto:"RTO",site3:"A treia locație",latency:"Latență între DC",verdict:"Verdict"},
+ map:{title:"Harta RPO și RTO",lead:"Unde se află fiecare variantă. Stânga-jos e mai bine; doar C și E ating RPO 0 cu recuperare automată, și ambele au nevoie de a treia locație.",rpo:"RPO (date pierdute)",rto:"RTO (timp de recuperare)",scale:["0","secunde","minute","ore"]},
+ items:[
+  {id:"A",name:"Stretched 2+1",short:"Un cluster, două noduri control plane în DC1, unul în DC2",dcLoss:"Pierderea DC2: ok. Pierderea DC1: API doar citire",rpo:"etcd: ultimele scrieri în pericol; datele după storage",rto:"Manual, depinde de runbook",site3:"Nu",latency:"etcd peer RTT < 100 ms (recomandat < 5 ms); cu ODF < 10 ms",verdict:"Nerecomandat",tone:"crit",
+   detail:["Suportat de Red Hat, dar documentat ca un singur failure domain care nu trebuie să înlocuiască un plan DR.","Pierderea locației majoritare pune API-ul în read-only. Recuperarea este quorum-restore.sh pe ultimul nod din DC2, cu riscul pierderii scrierilor care nu au ajuns acolo.","Necesită conectivitate IP directă, MTU uniform și VIP-uri pentru API și ingress; rețele L3 separate au nevoie de un load balancer extern.","Fiecare perturbare (partiție, nepotrivire MTU, vârf de latență, jitter) trebuie testată înainte de producție."]},
+  {id:"B",name:"Stretched 2+2 sau 3+2",short:"Patru sau cinci noduri control plane, doar bare metal, OCP 4.17+",dcLoss:"Ca A, dar supraviețuiesc două copii etcd",rpo:"Ca A, risc mai mic",rto:"Manual",site3:"Nu",latency:"Ca A; doar bare metal",verdict:"Compromis pentru VM fără a treia locație",tone:"warn",
+   detail:["Red Hat a adăugat control plane cu 4 și 5 noduri tocmai pentru implementări VM pe două locații pe bare metal.","Quorumul se pierde la fel la căderea unui DC, dar locația supraviețuitoare păstrează două copii etcd read-only, deci recuperarea manuală are rezervă.","Se instalează cu 3 noduri și se scalează în ziua 2 (Assisted sau Agent-based installer).","Mai multe noduri control plane reduc ușor throughput-ul și cresc latența."]},
+  {id:"C",name:"Stretched 1+1+1",short:"Un cluster, un nod control plane pe locație, a treia locație găzduiește votul decisiv",dcLoss:"Control plane-ul supraviețuiește automat",rpo:"0 cu storage sincron",rto:"Minute: pod-uri RWX ~6–8 min, RWO și VM după fencing",site3:"Da, un nod control plane complet",latency:"Zone de date < 10 ms (ODF); arbitrul după limitele etcd",verdict:"Doar cu a treia locație, plus un plan DR",tone:"good",
+   detail:["Topologia recomandată de Red Hat pentru un cluster pe mai multe locații: un membru control plane pe locație, trei locații.","Cu ODF stretch cluster (două zone de date + zonă arbitru) sau cu un storage array metro, datele au RPO 0.","Rămâne un singur failure domain: upgrade-urile, erorile de configurare și expirarea certificatelor lovesc ambele DC. Păstrați backup-uri OADP în afara clusterului sau un al doilea cluster.","A treia locație are nevoie de un nod real, nu de un witness ușor: clusterele standard nu au arbitru etcd-only (Two-Node with Arbiter este o topologie edge limitată la doi workeri)."]},
+  {id:"D",name:"Două clustere + Regional-DR",short:"Clustere independente, replicare asincronă a volumelor (ODF, array sau aplicație)",dcLoss:"Failover al aplicațiilor prin ACM",rpo:"> 0: intervalul de replicare (de la 1 min) și rata de schimbare",rto:"Minute, declanșat manual",site3:"Nu (hub ideal neutru)",latency:"Fără limită",verdict:"Implicit pentru date cu stare fără a treia locație",tone:"good",
+   detail:["ODF Regional-DR oglindește asincron volumele RBD între două clustere ODF; ACM orchestrează failover și failback per aplicație.","Necesită ODF Advanced și ACM. OpenShift Platform Plus include doar ODF Essentials.","Alternative: replicare asincronă a array-ului cu CSI VolumeReplication, VolSync sau replicare la nivel de aplicație (DB streaming, Kafka MirrorMaker 2).","Failover-ul este o operațiune sensibilă și rămâne manual implicit; Event-Driven Ansible îl poate automatiza cu protecție împotriva declanșărilor false."]},
+  {id:"E",name:"Două clustere + Metro-DR",short:"Clustere independente peste un Ceph stretch cluster extern cu arbitru",dcLoss:"Failover al aplicațiilor prin ACM",rpo:"0",rto:"Minute",site3:"Da, arbitru Ceph (~100 ms RTT)",latency:"< 10 ms",verdict:"RPO 0 cu două clustere",tone:"good",
+   detail:["Red Hat Ceph Storage extern întins pe ambele DC cu replicare sincronă; arbitrul monitorului stă într-o a treia locație la până la ~100 ms.","Doar all-flash, erasure coding nesuportat, o singură DRPolicy per soluție.","Hub recovery pentru Metro-DR este Technology Preview în ODF 4.18.","Echivalent cu un storage array metro: replicare sincronă plus witness, automatizarea failover-ului în funcție de suportul CSI al furnizorului."]},
+  {id:"F",name:"Două clustere active/active",short:"GSLB trimite traficul către ambele clustere deodată",dcLoss:"GSLB redirecționează traficul",rpo:"Stateless 0; datele cu stare după aplicație",rto:"Secunde până la minute (health check + DNS TTL)",site3:"Nu (baze de date cu consens: da)",latency:"După aplicație",verdict:"Implicit pentru stateless",tone:"good",
+   detail:["Ambele clustere servesc trafic; load balancer-ul global verifică un route în fiecare cluster.","Datele cu stare sunt replicate de aplicație: replicare DB, Kafka MirrorMaker 2 sau o bază de date în afara OpenShift.","Bazele de date cu consens (CockroachDB, YugabyteDB) au nevoie de trei failure domain-uri, exact ca etcd. Două DC nu le ajung.","Ambele clustere au nevoie de aceleași dependențe de platformă: IdP, registry, Git, Vault, S3, monitoring."]},
+  {id:"G",name:"Două clustere + backup/restore",short:"Backup-uri OADP în object storage, restaurare pe celălalt cluster",dcLoss:"Restaurare din backup",rpo:"Frecvența backup-urilor",rto:"Ore",site3:"Nu",latency:"Fără limită",verdict:"Complement, nu DR principal",tone:"info",
+   detail:["OADP (Velero) salvează obiectele Kubernetes și persistent volumes (CSI snapshot + data mover) în S3.","Red Hat nu recomandă backup-urile ca unică strategie DR: restaurările sunt rare, lente și puțin testate.","Backup-urile stau lângă orice altă variantă: replicarea copiază și corupția logică și ștergerile.","DORA art. 12 cere restaurarea în sisteme separate fizic și logic și teste periodice de restaurare."]}
+ ]
+},
+config:{
+ title:"Ce variantă vi se potrivește?",lead:"Răspundeți la șase întrebări. Recomandarea urmează arborele de decizie din raport: unde stau datele, RPO-ul necesar, a treia locație, latența, platforma și dacă un singur cluster este obligatoriu.",
+ q:{
+  stateful:{label:"Unde se află datele cu stare?",opts:{pv:"Persistent volumes în OpenShift",vm:"Mașini virtuale (OpenShift Virtualization)",ext:"În afara OpenShift (DB externă, mainframe)"}},
+  rpo:{label:"Ce RPO au nevoie aplicațiile critice?",opts:{zero:"Zero pierdere de date",min:"Minute",hour:"Ore (backup-ul e suficient)"}},
+  site3:{label:"Există o a treia locație disponibilă?",yes:"Da (o cameră, o sucursală, un tenant cloud)",no:"Nu"},
+  latency:{label:"Latență round-trip între DC"},
+  platform:{label:"Platformă",opts:{bm:"Bare metal",vs:"vSphere",other:"Altă / cloud"}},
+  single:{label:"Trebuie să fie un singur cluster?",yes:"Da, clientul insistă",no:"Nu, două clustere sunt acceptabile"}
+ },
+ result:{title:"Recomandare",primary:"Varianta principală",also:"Combinați cu",warnings:"Atenție la",needs:"Veți avea nevoie de",always:"Întotdeauna: backup-uri OADP în afara clusterului, GSLB, hub ACM rezilient, teste DR regulate."},
+ texts:{
+  extF:"Datele cu stare sunt în afara OpenShift, deci OpenShift poartă stratul stateless. Rulați două clustere active/active în spatele GSLB și lăsați baza de date să-și facă propriul DR (de ex. Data Guard, Always On).",
+  minD:"RPO în minute este atins fără a treia locație. Două clustere cu Regional-DR, replicare asincronă a array-ului sau replicare în aplicație; failover per aplicație prin ACM.",
+  hourG:"Backup-urile satisfac RPO-ul. Două clustere construite din Git, backup-uri OADP în S3 accesibil din ambele DC, restaurare pe clusterul supraviețuitor.",
+  zeroNoSiteSingleBm:"RPO 0, fără a treia locație și un singur cluster obligatoriu: stretched 3+2 pe bare metal este cea mai puțin rea opțiune. Quorumul se pierde la fel cu DC-ul majoritar; două copii etcd supraviețuitoare fac recuperarea manuală mai sigură.",
+  zeroNoSiteSingle:"RPO 0, fără a treia locație și un singur cluster obligatoriu: rămâne doar stretched 2+1, ca risc asumat. Numiți DC-ul majoritar ca principal și exersați quorum-restore.sh.",
+  zeroNoSite:"RPO 0 fără a treia locație nu poate fi automatizat în siguranță. Folosiți replicare sincronă a array-ului cu failover manual sau reevaluați RPO-ul: minutele deschid de obicei Regional-DR.",
+  zeroSiteSingle:"RPO 0, a treia locație, un singur cluster: stretched 1+1+1 cu un nod control plane pe locație și storage sincron (ODF stretch cluster sau array metro). Păstrați o țintă DR alături.",
+  zeroSiteE:"RPO 0 cu două clustere: Metro-DR peste un Ceph stretch cluster extern, arbitru în a treia locație. Sau un array metro cu witness și replicare CSI.",
+  alsoF:"F pentru servicii stateless (active/active în spatele GSLB)",alsoG:"G: backup-uri OADP în afara clusterului",alsoD:"D pentru date cu stare mai puțin critice (async, fără a treia locație)",alsoDR:"O țintă DR pentru clusterul întins: un al doilea cluster sau măcar backup-uri în afara clusterului",
+  wLat100:"Latență peste 100 ms: un control plane întins este în afara limitelor etcd. Sunt posibile doar două clustere.",
+  wLat10:"Latență peste 10 ms: ODF stretch cluster și Metro-DR nu sunt suportate. Variantele sincrone au nevoie de un array care o tolerează, sau treceți la async.",
+  wLat5:"Latență peste 5 ms: peste recomandarea Red Hat pentru un cluster întins. Testați partițiile, jitter-ul și etcd apply times înainte de producție.",
+  wVm:"VM-urile rulează într-o singură instanță: fencing-ul (Node Health Check + Fence Agents Remediation) este necesar înainte ca un VM să repornească în altă parte. Limitați restart storm-ul și păstrați ~100% capacitate liberă în DC-ul supraviețuitor.",
+  wVsphere:"Pe vSphere cu un metro storage cluster, vSphere HA poate reporni VM-urile control plane în celălalt DC și restabili quorumul fără quorum-restore.sh. Testați și confirmați suportul cu Red Hat.",
+  wBmOnly:"4 sau 5 noduri control plane sunt disponibile doar pe bare metal.",
+  wConsensus:"Active/active cu o bază de date cu consens are nevoie de trei failure domain-uri; cu două DC planificați active/passive pentru acea bază de date.",
+  wHub:"Amplasarea hub-ului ACM: în a treia locație sau hub-uri active/passive cu backup OADP în S3. Fără un hub accesibil nu puteți declanșa failover-ul ODF DR.",
+  wSingle:"Un singur cluster întins este un singur failure domain. Upgrade-urile și erorile de configurare lovesc ambele DC; păstrați un plan de rollback și backup-uri în afara clusterului.",
+  nOdfAdv:"Subscripții ODF Advanced + ACM",nGslb:"Load balancer global (F5, Infoblox sau Connectivity Link cu CoreDNS)",nGit:"Repozitoriu GitOps cu overlay-uri DR și o cale break-glass",nS3:"S3 accesibil din ambele DC pentru OADP și backup-urile hub-ului ACM",nFence:"BMC cu Redfish pentru fencing",nSite3:"Un server sau VM în a treia locație (nod control plane sau arbitru Ceph)",nDeps:"Dependențe de platformă în ambele DC: DNS, NTP, IdP, registry, Git, Vault, monitoring",nTest:"Teste documentate: pierdere DC, partiție, MTU, vârf de latență",nArray:"Storage array cu replicare sincronă și suport CSI VolumeReplication"
+ }
+},
+data:{title:"Datele și storage-ul decid RPO-ul",lead:"OpenShift nu stabilește RPO-ul atins; storage-ul și aplicația o fac. Aflați mai întâi unde stă starea. În bănci, adesea în baze de date din afara OpenShift, iar OpenShift poartă mai ales stratul stateless.",
+ items:[{h:"ODF stretch cluster",b:"Un cluster OpenShift, două zone de date (< 10 ms RTT) și o zonă arbitru. Necesită trei noduri control plane în trei zone și cel puțin patru workeri împărțiți egal în zonele de date."},
+  {h:"ODF Metro-DR",b:"Două clustere peste un Red Hat Ceph Storage stretch cluster extern. RPO 0, doar all-flash, o singură DRPolicy, arbitru într-o a treia locație la până la ~100 ms."},
+  {h:"ODF Regional-DR",b:"Mirroring RBD asincron între două clustere ODF, interval de la 1 minut. RPO > 0, fără limită de distanță, failover per aplicație prin ACM."},
+  {h:"Licențiere",b:"Toate cele trei opțiuni ODF DR necesită ODF Advanced; Metro-DR și Regional-DR necesită și ACM. OpenShift Platform Plus include doar ODF Essentials."},
+  {h:"Storage array-uri cu replicare CSI",b:"Hitachi GAD, NetApp, Pure, Dell, IBM. Replicarea volumelor nu este standardizată în CSI, deci automatizarea failover-ului depinde de furnizor: fără suport CSI, CSI VolumeReplication sau și replicarea metadatelor de namespace. Majoritatea soluțiilor metro au nevoie de un witness în a treia locație."},
+  {h:"Replicare la nivel de aplicație",b:"Replicare DB streaming, Kafka MirrorMaker 2. Aplicația știe ce replică și raportează starea. Consensul sincron are din nou nevoie de trei locații."},
+  {h:"VolSync (parte din ACM)",b:"Copii PV asincrone între clustere fără ODF. Potrivit pentru date mai puțin critice."},
+  {h:"Backup-urile stau mereu lângă replicare",b:"Replicarea copiază și corupția logică și ștergerile. DORA art. 12 cere restaurarea în sisteme separate fizic și logic și teste periodice de restaurare."}]},
+traffic:{title:"Rutarea traficului și conectivitatea",lead:"Un load balancer global este obligatoriu pentru orice variantă cu două clustere; documentația îl cere și pentru un cluster întins. La active/active, health check-ul GSLB și DNS TTL definesc RTO-ul.",
+ items:[{h:"GSLB existent",b:"F5 BIG-IP DNS, Infoblox și altele similare sunt calea cea mai rapidă: un wide IP per aplicație, health check pe un route în fiecare cluster."},
+  {h:"Red Hat Connectivity Link (Kuadrant)",b:"DNSPolicy pe Gateway API gestionează declarativ înregistrările DNS globale. Integrarea cu CoreDNS pentru DNS on-prem este GA din 1.3 (Tech Preview în 1.1). Necesită delegarea zonei din DNS-ul corporativ către VIP-urile CoreDNS."},
+  {h:"East-west între clustere",b:"Submariner (parte din ACM) la nivel de rețea, Red Hat Service Interconnect (Skupper) la nivel de aplicație sau OpenShift Service Mesh 3 în federare multi-primary cu preferință pentru instanța locală."},
+  {h:"Rețeaua clusterului întins",b:"Conectivitate IP directă între noduri, MTU uniform, VIP-uri on-prem (keepalived) pentru API și ingress care presupun un singur segment L2. Rețele L3 separate per DC au nevoie de un load balancer extern."},
+  {h:"Dependențe de platformă în ambele DC",b:"DNS, NTP, IdP (AD/LDAP), image registry (Quay sau mirror), Git, Vault și S3 pentru backup-uri. Altfel clusterul DR nu poate porni aplicațiile chiar dacă datele există."}]},
+mgmt:{title:"Stratul de management trebuie să supraviețuiască căderii",lead:"Hub-ul ACM declanșează failover-ul prin DRPlacementControl și păstrează placement-urile și policies. Dacă DC-ul cu hub-ul cade, nimeni nu poate porni failover-ul, deci hub-ul trebuie să fie mai rezilient decât ceea ce protejează.",
+ items:[{h:"Amplasarea hub-ului",b:"Documentația ODF: hub activ lângă clusterul primar și hub pasiv lângă cel secundar, sau hub activ într-o a treia locație neutră. Hub recovery pentru Metro-DR este Technology Preview în ODF 4.18."},
+  {h:"Hub active/passive prin OADP",b:"Hub-ul activ face backup în S3; cel pasiv restaurează continuu datele pasive (syncRestoreWithNewBackups, interval implicit 30 min). Datele de activare se restaurează doar la failover. Din ACM 2.7 clusterele gestionate se pot reconecta automat."},
+  {h:"Runbook condus de label",b:"Un label gestionat în Git (active / standby / failover) aplicat prin Policy comută BackupSchedule și BackupStorageLocation între hub-uri. Utilizabil ca runbook gata făcut pentru client."},
+  {h:"GitOps ca sursă de adevăr",b:"Starea aplicațiilor în Git, DR ca overlay peste starea normală. Păstrați o cale break-glass (oc apply -k overlays/dr) pentru când Git sau Argo CD nu sunt accesibile."},
+  {h:"Declanșarea failover-ului",b:"Red Hat îl păstrează manual implicit. Event-Driven Ansible poate apela API-ul ACM, dar designul trebuie să protejeze împotriva declanșărilor false în timpul unei partiții."}]},
+virt:{title:"OpenShift Virtualization",lead:"VM-urile sunt cel mai frecvent motiv pentru care un client vrea un cluster întins: rulează într-o singură instanță, nu au replicare aplicativă și obiceiurile din VMware așteaptă un vSphere Metro Storage Cluster. Echivalentul în OpenShift este stretched 1+1+1 cu storage sincron și, la fel ca vMSC, are nevoie de a treia locație.",
+ items:[{h:"Cluster întins pentru VM",b:"Replicare simetrică a storage-ului, VLAN-uri întinse, latență ~5 ms și un witness site. A treia locație este cerută de etcd și găzduiește de obicei un nod control plane. VM-urile repornite au RPO 0."},
+  {h:"Fără fencing, VM-urile nu se mută în siguranță",b:"Node Health Check + Fence Agents Remediation (recomandat pentru Virtualization) cu taint-ul out-of-service. Nereglat, replanificarea de pe un nod inaccesibil durează cca 12 minute; reglat, cca 1,5 minute."},
+  {h:"Restart storm",b:"După pierderea unui DC, OpenShift replanifică toate VM-urile deodată. Controlați ordinea și ritmul (node selectors, priorități) și păstrați ~100% capacitate în DC-ul supraviețuitor."},
+  {h:"Două clustere pentru VM",b:"Replicare unidirecțională a array-ului sau ODF Regional/Metro-DR, starea VM în GitOps ca overlay DR. Cross-cluster live migration (4.20, Tech Preview) este pentru mutări planificate, nu pentru DR."},
+  {h:"4–5 noduri control plane",b:"Introduse pentru implementări VM pe două locații pe bare metal (2+2, 3+2). Două copii etcd supraviețuiesc pierderii unui DC, dar recuperarea rămâne manuală."},
+  {h:"Subscripții",b:"Un cluster întins necesită ambele locații complet subscrise; o locație warm DR poate păstra VM-uri oprite. Confirmați termenii pentru capacitatea DR cu vânzările."}]},
+discovery:{title:"Întrebări pentru client",lead:"Aceste răspunsuri decid între variante mai mult decât orice altceva. Primele trei sunt cheie.",
+ items:[{k:1,t:"Ce înseamnă „HA” pentru dumneavoastră: ce RPO și RTO are nevoie fiecare tier de aplicații și failover-ul este automat sau declanșat de om?"},
+  {k:1,t:"Există o a treia locație? Rulați deja un witness, mediator sau tie-breaker pentru storage sau vSAN? Ar putea găzdui un server sau VM pentru un nod control plane sau un arbitru Ceph?"},
+  {k:1,t:"Unde stau datele cu stare: baze de date în afara OpenShift, PV-uri în OpenShift sau VM-uri?"},
+  {k:0,t:"Platformă: bare metal, vSphere sau altă? (4–5 noduri control plane doar pe bare metal; pe vSphere contează vSphere HA și vMSC.)"},
+  {k:0,t:"Rețeaua între DC: distanță, RTT și jitter, lățime de bandă, L2 întins da/nu, redundanța căilor."},
+  {k:0,t:"Storage: ODF sau un array cu driver CSI? Ce furnizor și suportă CSI VolumeReplication?"},
+  {k:0,t:"GSLB și DNS existente (F5, Infoblox) și cine le operează?"},
+  {k:0,t:"Dependențe de platformă în ambele DC: IdP, registry, Git, Vault, S3, monitoring."},
+  {k:0,t:"Reglementare: DORA, cerințele autorității de reglementare sau politica internă privind backup-uri separate și frecvența testelor DR."},
+  {k:0,t:"Licențiere: OpenShift Platform Plus sau OCP + ACM + ODF separat? Funcțiile DR ODF necesită ODF Advanced."}],
+ progress:"{done} din {total} răspunse"},
+sources:{title:"Surse",lead:"Documentația Red Hat și blogurile pe care se bazează ghidul.",groups:{docs:"Documentație Red Hat",blogs:"Bloguri și articole Red Hat",other:"Prezentări și altele"}}
+};
+const SOURCES = {
+ docs:[
+  {t:"OCP 4.21 — Guidance for clusters that span data centers",u:"https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/etcd/etcd-guidance-span"},
+  {t:"Restoring etcd quorum for HA clusters (quorum-restore.sh)",u:"https://github.com/openshift/openshift-docs/blob/main/modules/dr-restoring-etcd-quorum-ha.adoc"},
+  {t:"Node scaling for etcd (4–5 control plane nodes)",u:"https://github.com/openshift/openshift-docs/blob/main/modules/etcd-node-scaling.adoc"},
+  {t:"Two-Node with Arbiter",u:"https://github.com/openshift/openshift-docs/blob/main/installing/installing_two_node_cluster/about-two-node-arbiter-installation.adoc"},
+  {t:"ODF 4.18 — Disaster recovery with stretch cluster",u:"https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/4.18/html/configuring_openshift_data_foundation_disaster_recovery_for_openshift_workloads/introduction-to-stretch-cluster-disaster-recovery_stretch-cluster"},
+  {t:"ODF 4.18 — Metro-DR solution",u:"https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/4.18/html/configuring_openshift_data_foundation_disaster_recovery_for_openshift_workloads/metro-dr-solution"},
+  {t:"ODF 4.18 — Planning: Disaster Recovery",u:"https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/4.18/html/planning_your_deployment/disaster-recovery"},
+  {t:"Red Hat Connectivity Link 1.3 — release notes",u:"https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.3/html/whats_new/rhcl-release-notes"},
+  {t:"KCS 3220991 — Deployments Spanning Multiple Sites (subscriber)",u:"https://access.redhat.com/articles/3220991"},
+  {t:"KCS 3221001 — HA and Recommended Practices (subscriber)",u:"https://access.redhat.com/articles/3221001"}],
+ blogs:[
+  {t:"A Guide to High Availability/Disaster Recovery for Applications on OpenShift (Gurijala, Sullivan, 2022)",u:"https://www.redhat.com/en/blog/a-guide-to-high-availability/disaster-recovery-for-applications-on-openshift"},
+  {t:"Disaster Recovery Strategies for Applications Running on OpenShift (Spazzoli, 2020)",u:"https://www.redhat.com/en/blog/disaster-recovery-strategies-for-applications-running-on-openshift"},
+  {t:"Deploying OpenShift Applications to Multiple Datacenters (Spazzoli, 2017)",u:"https://www.redhat.com/en/blog/deploying-openshift-applications-multiple-datacenters"},
+  {t:"Metro Area OpenShift Stretch Cluster (Phillips, Clewett, 2018, OCP 3.9)",u:"https://www.redhat.com/en/blog/metro-area-openshift-stretch-cluster-how-to-survive-an-outage-and-live-to-tell-about-it"},
+  {t:"Disaster recovery approaches for Red Hat OpenShift Virtualization (Baker, Spazzoli, 2025)",u:"https://www.redhat.com/en/blog/disaster-recovery-approaches-red-hat-openshift-virtualization"},
+  {t:"Disaster recovery approaches for OpenShift Virtualization, part 2 (2025)",u:"https://developers.redhat.com/articles/2025/08/11/disaster-recovery-approaches-red-hat-openshift-virtualization-part-2"},
+  {t:"How RHOCP 4.17 enhances control plane resilience (Schmitt, 2025)",u:"https://developers.redhat.com/articles/2025/02/12/how-rhocp-417-enhances-control-plane-resilience"},
+  {t:"Protecting virtual machines from storage and secondary network node failures (Spazzoli, 2025)",u:"https://developers.redhat.com/articles/2025/10/13/protecting-virtual-machines-storage-and-secondary-network-node-failures"},
+  {t:"Multicluster resiliency with global load balancing and mesh federation (Spazzoli, 2025)",u:"https://developers.redhat.com/articles/2025/08/28/multicluster-resiliency-global-load-balancing-and-mesh-federation"},
+  {t:"What's new in Red Hat OpenShift Virtualization 4.20 (2025)",u:"https://www.redhat.com/en/blog/whats-new-in-red-hat-openshift-virtualization-4.20"},
+  {t:"Two-node OpenShift with fencing improves reliability at the edge (2026)",u:"https://www.redhat.com/en/blog/two-node-openshift-fencing-improves-reliability-edge"},
+  {t:"Backup and restore hub clusters with Red Hat Advanced Cluster Management (2022)",u:"https://www.redhat.com/en/blog/backup-and-restore-hub-clusters-with-red-hat-advanced-cluster-management-for-kubernetes"},
+  {t:"Event-driven disaster recovery (2023)",u:"https://www.redhat.com/en/blog/event-driven-disaster-recovery"}],
+ other:[
+  {t:"RH1 2024 — Disaster Recovery Options for Applications running on OpenShift (deck)"},
+  {t:"Disaster Recovery for OpenShift workloads — M. Hergaarden (deck)"},
+  {t:"ACM Disaster Recovery — T. Matofa (deck)"},
+  {t:"DORA, Article 12 — backup, restoration and testing",u:"https://www.springlex.eu/en/packages/dora/dora-regulation/article-12/"}]
+};
+const LANGS = ["cs","sk","pl","ro","en"];
+const TOPOS = {
+ "2+1":{dc1:2,dc2:1,s3:0,two:false},"1+1+1":{dc1:1,dc2:1,s3:1,two:false},"2+2":{dc1:2,dc2:2,s3:0,two:false},"3+2":{dc1:3,dc2:2,s3:0,two:false},"two":{dc1:3,dc2:3,s3:0,two:true}
+};
+// RPO/RTO map positions on a 0..3 log-like scale: 0=zero,1=seconds,2=minutes,3=hours
+const MAP = {A:{rpo:0.6,rto:2.6},B:{rpo:0.45,rto:2.5},C:{rpo:0,rto:2.0},D:{rpo:2.0,rto:2.1},E:{rpo:0,rto:2.15},F:{rpo:0.15,rto:1.2},G:{rpo:3,rto:3}};
+
+let lang = "cs", T = null;
+const S = {topo:"2+1",failed:new Set(),isolated:false,variant:"A",checks:new Set(),
+ cfg:{stateful:"pv",rpo:"zero",site3:"no",latency:3,platform:"vs",single:"no"}};
+try{ const l=localStorage.getItem("ocp2dc.lang"); if(l&&I18N[l]) lang=l; const c=JSON.parse(localStorage.getItem("ocp2dc.cfg")||"null"); if(c) Object.assign(S.cfg,c); const ck=JSON.parse(localStorage.getItem("ocp2dc.checks")||"null"); if(Array.isArray(ck)) S.checks=new Set(ck);}catch(e){}
+const save=()=>{try{localStorage.setItem("ocp2dc.lang",lang);localStorage.setItem("ocp2dc.cfg",JSON.stringify(S.cfg));localStorage.setItem("ocp2dc.checks",JSON.stringify([...S.checks]));}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const get=(o,p)=>p.split(".").reduce((a,k)=>a&&a[k],o);
+const fmt=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+
+function renderStatic(){
+ document.documentElement.lang=lang;
+ document.querySelectorAll("[data-i18n]").forEach(el=>{const v=get(T,el.dataset.i18n); if(v!=null) el.textContent=v;});
+ $("#tabs").innerHTML=Object.entries(T.nav).map(([k,v])=>`<button class="tab" data-sec="${k}">${esc(v)}</button>`).join("");
+ $("#langs").innerHTML=LANGS.map(l=>`<button class="lang${l===lang?" active":""}" data-lang="${l}">${l.toUpperCase()}</button>`).join("");
+ const P=T.principle;
+ $("#hadr").innerHTML=`<h3>${esc(P.hadr.title)}</h3><p>${esc(P.hadr.body)}</p>`;
+ $("#drtwo").innerHTML=`<h3>${esc(P.drtwo.title)}</h3><p>${esc(P.drtwo.body)}</p>`;
+ $("#disposable").innerHTML=`<div><h3>${esc(P.disposable.title)}</h3><p class="lead" style="font-size:.92rem">${esc(P.disposable.lead)}</p></div><div class="grid3">${P.disposable.cols.map((c,i)=>`<div class="cell"><h4>${esc(c.h)}</h4><ul>${c.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>`;
+ $("#blast").innerHTML=`<h3>${esc(P.blast.title)}</h3><p>${esc(P.blast.body)}</p>`;
+ const cells=(id,items)=>{$(id).innerHTML=items.map(x=>`<div class="panel"><h4>${esc(x.h)}</h4><p style="font-size:.92rem">${esc(x.b)}</p></div>`).join("");};
+ cells("#dataItems",T.data.items);cells("#trafficItems",T.traffic.items);cells("#mgmtItems",T.mgmt.items);cells("#virtItems",T.virt.items);
+ $("#srcGroups").innerHTML=Object.entries(SOURCES).map(([k,items])=>`<div class="panel"><h4>${esc(T.sources.groups[k])}</h4><ul class="src">${items.map(s=>`<li>${s.u?`<a href="${s.u}" target="_blank" rel="noopener">${esc(s.t)}</a>`:esc(s.t)}</li>`).join("")}</ul></div>`).join("");
+ $("#topo").innerHTML=Object.entries(T.sim.topos).map(([k,v])=>`<option value="${k}"${k===S.topo?" selected":""}>${esc(v)}</option>`).join("");
+ $("#reset").textContent=T.sim.reset;
+}
+
+/* ---------- simulator ---------- */
+function simState(){
+ const t=TOPOS[S.topo], f=S.failed, iso=S.isolated;
+ const sites=["dc1","dc2","s3"];
+ const alive=s=>t[s]>0&&!f.has(s);
+ if(t.two){
+  const up=sites.filter(s=>t[s]>0&&alive(s));
+  if(up.length===0) return {kind:"two",tone:"crit",text:T.sim.out.all,api:"down",rec:"recoverBackup",members:"0 / 0",quorum:"—"};
+  if(f.size) {const lost=sites.find(s=>t[s]>0&&f.has(s)); return {kind:"two",tone:"warn",text:fmt(T.sim.out.twoLost,{site:T.sim.sites[lost]}),api:"rw",rec:"recoverFailover",members:`${t[up[0]]} / ${t[up[0]]}`,quorum:"2 / 3"};}
+  if(iso) return {kind:"two",tone:"warn",text:T.sim.out.twoPartition,api:"rw",rec:"recoverFailover",members:"3 / 3 · 3 / 3",quorum:"2 / 3"};
+  return {kind:"two",tone:"good",text:T.sim.out.twoOk,api:"rw",rec:"recoverNone",members:"3 / 3 · 3 / 3",quorum:"2 / 3"};
+ }
+ const total=t.dc1+t.dc2+t.s3, maj=Math.floor(total/2)+1;
+ const aliveN=sites.reduce((n,s)=>n+(alive(s)?t[s]:0),0);
+ if(aliveN===0) return {tone:"crit",text:T.sim.out.all,api:"down",rec:"recoverBackup",members:`0 / ${total}`,quorum:`${maj} / ${total}`};
+ // partition: DC2 isolated from DC1 and S3
+ if(iso && alive("dc2")){
+  const sideA=(alive("dc1")?t.dc1:0)+(alive("s3")?t.s3:0), sideB=t.dc2;
+  const members=`${aliveN} / ${total}`, quorum=`${maj} / ${total}`;
+  if(t.s3>0 && alive("s3")) return {tone:"warn",text:T.sim.out.partition111,api:"rw",rec:"recoverAuto",members,quorum};
+  if(sideA>=maj) return {tone:"warn",text:T.sim.out.partition,api:"rw",rec:"recoverAuto",members,quorum};
+  return {tone:"crit",text:T.sim.out.partitionMajorLost,api:"ro",rec:"recoverManual",members,quorum};
+ }
+ const members=`${aliveN} / ${total}`, quorum=`${maj} / ${total}`;
+ if(f.size===0) return {tone:"good",text:T.sim.out.ok,api:"rw",rec:"recoverNone",members,quorum};
+ if(aliveN>=maj) return {tone:"warn",text:T.sim.out.minor,api:"rw",rec:"recoverAuto",members,quorum};
+ return {tone:"crit",text:fmt(T.sim.out.major,{copies:aliveN}),api:"ro",rec:"recoverManual",members,quorum};
+}
+function renderSim(){
+ const t=TOPOS[S.topo], st=simState();
+ const sites=["dc1","dc2","s3"];
+ $("#sites").innerHTML=sites.map(s=>{
+  const n=t[s], failed=S.failed.has(s), iso=S.isolated&&s==="dc2"&&!failed, empty=n===0;
+  const nodes=[];
+  for(let i=0;i<n;i++) nodes.push(`<span class="node cp${failed?" dead":""}${iso&&st.api==="rw"&&!(t.s3>0)?" orphan":""}">${T.sim.cp}${t.two?"":" "+(i+1)}</span>`);
+  if(!empty) for(let i=0;i<2;i++) nodes.push(`<span class="node${failed?" dead":""}${iso?" orphan":""}">W</span>`);
+  const sub=empty?T.sim.none:(t.two?`${T.sim.cluster} ${s==="dc1"?"A":"B"} · 3 CP + ${T.sim.workers}`:`${n} CP + ${T.sim.workers}`);
+  return `<div class="site${failed?" failed":""}${iso?" isolated":""}${empty?" empty":""}" data-site="${s}" role="button" tabindex="${empty?-1:0}" aria-pressed="${failed}"><h4>${esc(T.sim.sites[s])}${failed?`<span class="pill crit">✕</span>`:iso?`<span class="pill warn">⇆</span>`:""}</h4><div class="nodes">${nodes.join("")}</div><small>${esc(sub)}</small></div>`;
+ }).join("")+`<div class="link">${S.isolated?"DC1 ✕ DC2":"DC1 ⟷ DC2"}${t.s3?" ⟷ S3":""}</div>`;
+ const api=T.sim.api[st.api];
+ $("#stats").innerHTML=`
+  <div class="stat"><span>${esc(T.sim.stats.members)}</span><b>${st.members}</b></div>
+  <div class="stat"><span>${esc(T.sim.stats.quorum)}</span><b>${st.quorum}</b></div>
+  <div class="stat"><span>${esc(T.sim.stats.api)}</span><span class="pill ${st.api==="rw"?"good":st.api==="ro"?"crit":"crit"}">${esc(api)}</span></div>
+  <div class="stat"><span>${esc(T.sim.stats.recovery)}</span><b style="text-align:right;max-width:60%">${esc(T.sim.out[st.rec])}</b></div>
+  <div class="verdict ${st.tone}"><strong>${esc(T.sim.stats.workloads)}</strong><span>${esc(st.text)}</span></div>`;
+ const ib=$("#isolate"); ib.textContent=S.isolated?T.sim.isolateOn:T.sim.isolate; ib.classList.toggle("on",S.isolated);
+}
+
+/* ---------- variants ---------- */
+function renderVariants(){
+ const V=T.variants;
+ $("#vcards").innerHTML=V.items.map(v=>`<div class="vcard${v.id===S.variant?" sel":""}" data-v="${v.id}" role="button" tabindex="0"><div class="id">${v.id}</div><h4>${esc(v.name)}</h4><small>${esc(v.short)}</small><span class="pill ${v.tone}">${esc(v.verdict)}</span></div>`).join("");
+ const v=V.items.find(x=>x.id===S.variant);
+ $("#vdetail").innerHTML=`<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><span class="vcard id" style="font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--accent)">${v.id}</span><h3>${esc(v.name)}</h3><span class="pill ${v.tone}">${esc(v.verdict)}</span></div>
+  <div class="kv"><div><span>${esc(V.cols.dcLoss)}</span>${esc(v.dcLoss)}</div><div><span>RPO</span>${esc(v.rpo)}</div><div><span>RTO</span>${esc(v.rto)}</div><div><span>${esc(V.cols.site3)}</span>${esc(v.site3)}</div><div><span>${esc(V.cols.latency)}</span>${esc(v.latency)}</div></div>
+  <ul class="list">${v.detail.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>`;
+ $("#vtable").innerHTML=`<table><thead><tr><th></th><th>${esc(V.cols.dcLoss)}</th><th>RPO</th><th>RTO</th><th>${esc(V.cols.site3)}</th><th>${esc(V.cols.latency)}</th><th>${esc(V.cols.verdict)}</th></tr></thead><tbody>${V.items.map(x=>`<tr class="${x.id===S.variant?"hl":""}" data-v="${x.id}"><td><b>${x.id}</b> ${esc(x.name)}</td><td>${esc(x.dcLoss)}</td><td>${esc(x.rpo)}</td><td>${esc(x.rto)}</td><td>${esc(x.site3)}</td><td>${esc(x.latency)}</td><td><span class="pill ${x.tone}">${esc(x.verdict)}</span></td></tr>`).join("")}</tbody></table>`;
+ renderMap();
+}
+function renderMap(){
+ const V=T.variants, W=640,H=360,L=60,R=24,Tm=20,B=50;
+ const x=v=>L+(v/3)*(W-L-R), y=v=>Tm+(1-v/3)*(H-Tm-B);
+ let g="";
+ for(let i=0;i<=3;i++){g+=`<line class="grid" x1="${x(i)}" y1="${Tm}" x2="${x(i)}" y2="${H-B}"/><line class="grid" x1="${L}" y1="${y(i)}" x2="${W-R}" y2="${y(i)}"/>`;
+  g+=`<text class="ax" x="${x(i)}" y="${H-B+16}" text-anchor="middle">${esc(V.map.scale[i])}</text><text class="ax" x="${L-8}" y="${y(i)+4}" text-anchor="end">${esc(V.map.scale[i])}</text>`;}
+ g+=`<text class="ax" x="${(L+W-R)/2}" y="${H-8}" text-anchor="middle">${esc(V.map.rpo)}</text><text class="ax" transform="translate(14 ${(Tm+H-B)/2}) rotate(-90)" text-anchor="middle">${esc(V.map.rto)}</text>`;
+ const dots=V.items.map(v=>{const p=MAP[v.id];return `<g class="dot${v.id===S.variant?" sel":""}" data-v="${v.id}" transform="translate(${x(p.rpo)} ${y(p.rto)})"><circle r="13"/><text text-anchor="middle" dy="4" fill="${v.id===S.variant?"var(--bg)":"var(--fg)"}">${v.id}</text></g>`;}).join("");
+ $("#rpomap").innerHTML=`<svg class="map" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(V.map.title)}">${g}${dots}</svg>`;
+}
+
+/* ---------- configurator ---------- */
+function renderQuestions(){
+ const Q=T.config.q, c=S.cfg;
+ const seg=(key,opts)=>`<div class="seg" data-key="${key}">${Object.entries(opts).map(([k,v])=>`<button data-val="${k}" class="${c[key]===k?"on":""}">${esc(v)}</button>`).join("")}</div>`;
+ const sel=(key,opts)=>`<select id="q_${key}" data-key="${key}">${Object.entries(opts).map(([k,v])=>`<option value="${k}"${c[key]===k?" selected":""}>${esc(v)}</option>`).join("")}</select>`;
+ $("#questions").innerHTML=`
+  <div class="q"><div class="lbl">${esc(Q.stateful.label)}</div>${sel("stateful",Q.stateful.opts)}</div>
+  <div class="q"><div class="lbl">${esc(Q.rpo.label)}</div>${seg("rpo",Q.rpo.opts)}</div>
+  <div class="q"><div class="lbl">${esc(Q.site3.label)}</div>${seg("site3",{yes:Q.site3.yes,no:Q.site3.no})}</div>
+  <div class="q"><div class="lbl">${esc(Q.latency.label)}</div><div class="range"><input type="range" id="q_latency" min="1" max="150" value="${c.latency}"><output id="latOut">${c.latency} ms</output></div></div>
+  <div class="q"><div class="lbl">${esc(Q.platform.label)}</div>${seg("platform",Q.platform.opts)}</div>
+  <div class="q"><div class="lbl">${esc(Q.single.label)}</div>${seg("single",{no:Q.single.no,yes:Q.single.yes})}</div>`;
+}
+function recommend(){
+ const c=S.cfg, X=T.config.texts, out={primary:null,text:"",also:[],warn:[],needs:[]};
+ const vm=c.stateful==="vm", bm=c.platform==="bm", single=c.single==="yes", site3=c.site3==="yes", lat=+c.latency;
+ if(c.stateful==="ext"){out.primary="F";out.text=X.extF;out.also.push(X.alsoG);out.warn.push(X.wConsensus);out.needs.push(X.nGslb,X.nGit,X.nDeps);}
+ else if(c.rpo==="hour"){out.primary="G";out.text=X.hourG;out.also.push(X.alsoF);out.needs.push(X.nS3,X.nGit,X.nGslb);}
+ else if(c.rpo==="min"){out.primary="D";out.text=X.minD;out.also.push(X.alsoF,X.alsoG);out.warn.push(X.wHub);out.needs.push(X.nOdfAdv,X.nGslb,X.nGit,X.nS3);}
+ else if(!site3){
+  if(single){ if(bm){out.primary="B";out.text=X.zeroNoSiteSingleBm;} else {out.primary="A";out.text=X.zeroNoSiteSingle; if(c.platform!=="bm") out.warn.push(X.wBmOnly);} out.also.push(X.alsoDR,X.alsoG);out.warn.push(X.wSingle);out.needs.push(X.nArray,X.nTest,X.nGslb); }
+  else {out.primary="D";out.text=X.zeroNoSite;out.also.push(X.alsoF,X.alsoG);out.warn.push(X.wHub);out.needs.push(X.nArray,X.nGslb,X.nGit,X.nS3);}
+ } else {
+  if(single){out.primary="C";out.text=X.zeroSiteSingle;out.also.push(X.alsoDR,X.alsoG);out.warn.push(X.wSingle);out.needs.push(X.nSite3,X.nOdfAdv,X.nGslb,X.nTest);}
+  else {out.primary="E";out.text=X.zeroSiteE;out.also.push(X.alsoF,X.alsoD,X.alsoG);out.warn.push(X.wHub);out.needs.push(X.nSite3,X.nOdfAdv,X.nGslb,X.nGit,X.nS3);}
+ }
+ const stretched=["A","B","C"].includes(out.primary);
+ if(lat>100 && stretched) out.warn.unshift(X.wLat100); else if(lat>10 && (stretched||out.primary==="E")) out.warn.unshift(X.wLat10); else if(lat>5 && stretched) out.warn.unshift(X.wLat5);
+ if(vm){out.warn.push(X.wVm);out.needs.push(X.nFence);}
+ if(c.platform==="vs" && stretched) out.warn.push(X.wVsphere);
+ if(!out.needs.includes(X.nDeps)) out.needs.push(X.nDeps);
+ return out;
+}
+function renderResult(){
+ const r=recommend(), v=T.variants.items.find(x=>x.id===r.primary), R=T.config.result;
+ $("#result").innerHTML=`<h3>${esc(R.title)}</h3>
+  <div class="primary"><span class="pill rec">${esc(R.primary)}</span><div style="display:flex;gap:10px;align-items:baseline"><span class="id">${v.id}</span><h4 style="font-size:1.1rem">${esc(v.name)}</h4></div><p style="font-size:.92rem">${esc(r.text)}</p><button class="btn" data-goto="${v.id}">${esc(v.verdict)} →</button></div>
+  ${r.also.length?`<div><h4>${esc(R.also)}</h4><ul class="list info">${r.also.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+  ${r.warn.length?`<div><h4>${esc(R.warnings)}</h4><ul class="list warn">${r.warn.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+  <div><h4>${esc(R.needs)}</h4><ul class="list good">${r.needs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+  <p class="progress">${esc(R.always)}</p>`;
+}
+
+/* ---------- checklist ---------- */
+function renderChecklist(){
+ const D=T.discovery;
+ $("#checklist").innerHTML=D.items.map((it,i)=>`<label class="${S.checks.has(i)?"done":""}${it.k?" key":""}"><input type="checkbox" id="chk${i}" data-i="${i}"${S.checks.has(i)?" checked":""}><span>${esc(it.t)}</span></label>`).join("");
+ $("#progress").textContent=fmt(D.progress,{done:S.checks.size,total:D.items.length});
+}
+
+function renderAll(){T=I18N[lang];renderStatic();renderSim();renderVariants();renderQuestions();renderResult();renderChecklist();updateTabs();}
+function updateTabs(){const y=window.scrollY+120;let cur="principle";document.querySelectorAll("main section").forEach(s=>{if(s.offsetTop<=y)cur=s.id;});document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.sec===cur));}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+ const tab=e.target.closest(".tab"); if(tab){document.getElementById(tab.dataset.sec).scrollIntoView({behavior:"smooth"});return;}
+ const lg=e.target.closest(".lang"); if(lg){lang=lg.dataset.lang;save();renderAll();return;}
+ const site=e.target.closest(".site"); if(site&&!site.classList.contains("empty")){const s=site.dataset.site; S.failed.has(s)?S.failed.delete(s):S.failed.add(s); renderSim();return;}
+ if(e.target.id==="isolate"){S.isolated=!S.isolated;renderSim();return;}
+ if(e.target.id==="reset"){S.failed.clear();S.isolated=false;renderSim();return;}
+ const vc=e.target.closest("[data-v]"); if(vc){S.variant=vc.dataset.v;renderVariants();return;}
+ const sg=e.target.closest(".seg button"); if(sg){S.cfg[sg.parentElement.dataset.key]=sg.dataset.val;save();renderQuestions();renderResult();return;}
+ const go=e.target.closest("[data-goto]"); if(go){S.variant=go.dataset.goto;renderVariants();document.getElementById("variants").scrollIntoView({behavior:"smooth"});return;}
+});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches(".site,.vcard")){e.preventDefault();e.target.click();}});
+document.addEventListener("change",e=>{
+ if(e.target.id==="topo"){S.topo=e.target.value;S.failed.clear();S.isolated=false;renderSim();}
+ if(e.target.dataset.key&&e.target.tagName==="SELECT"){S.cfg[e.target.dataset.key]=e.target.value;save();renderResult();}
+ if(e.target.matches("#checklist input")){const i=+e.target.dataset.i;e.target.checked?S.checks.add(i):S.checks.delete(i);save();renderChecklist();}
+});
+document.addEventListener("input",e=>{if(e.target.id==="q_latency"){S.cfg.latency=+e.target.value;$("#latOut").textContent=S.cfg.latency+" ms";save();renderResult();}});
+window.addEventListener("scroll",updateTabs,{passive:true});
+renderAll();
+if(location.hash){const el=document.getElementById(location.hash.slice(1)); if(el) setTimeout(()=>el.scrollIntoView(),50);}
+
+</script>
+</body>
+</html>
